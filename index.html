@@ -205,7 +205,7 @@
         </button>
 
         <!-- Кнопка входа через Steam -->
-        <button id="steam-login-topbar-btn" onclick="openSteamLoginModal()" class="flex items-center gap-2 bg-[#171a21] hover:bg-[#2a475e] border border-[#66c0f4]/40 text-[#c7d5e0] hover:text-white px-3.5 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition cursor-pointer">
+        <button id="steam-login-topbar-btn" onclick="loginWithSteamOpenID()" class="flex items-center gap-2 bg-[#171a21] hover:bg-[#2a475e] border border-[#66c0f4]/40 text-[#c7d5e0] hover:text-white px-3.5 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition cursor-pointer">
           <svg class="w-4 h-4 fill-current text-[#66c0f4]" viewBox="0 0 24 24"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.253 0-2.265-1.014-2.265-2.265z"/></svg>
           <span class="hidden sm:inline">Войти через Steam</span>
           <span class="sm:hidden">Steam</span>
@@ -238,7 +238,7 @@
                   Классический рейтинг
                 </div>
                 <h3 class="text-xl font-black uppercase tracking-wide text-white">5v5 COMPETITIVE</h3>
-                <p class="text-xs text-gray-400">MR12 (до 13 раундов) • Капитанское вето • 7 турнирных карт CS2</p>
+                <p class="text-xs text-gray-400">MR12 (до 13 раундов) • Капитанское вето • Nuke, Mirage, Dust2</p>
               </div>
               <div class="w-11 h-11 rounded-xl bg-faceit-bg border border-faceit-border flex items-center justify-center font-display font-bold text-lg text-faceit-orange shrink-0">
                 5v5
@@ -246,12 +246,8 @@
             </div>
             <div class="mt-3 pt-3 border-t border-faceit-border/70 flex flex-wrap gap-1.5 text-[10px] font-mono text-gray-400">
               <span class="px-2 py-0.5 rounded bg-faceit-bg">Mirage</span>
-              <span class="px-2 py-0.5 rounded bg-faceit-bg">Inferno</span>
-              <span class="px-2 py-0.5 rounded bg-faceit-bg">Dust2</span>
               <span class="px-2 py-0.5 rounded bg-faceit-bg">Nuke</span>
-              <span class="px-2 py-0.5 rounded bg-faceit-bg">Ancient</span>
-              <span class="px-2 py-0.5 rounded bg-faceit-bg">Anubis</span>
-              <span class="px-2 py-0.5 rounded bg-faceit-bg">Overpass</span>
+              <span class="px-2 py-0.5 rounded bg-faceit-bg">Dust2</span>
             </div>
           </button>
 
@@ -263,19 +259,15 @@
                   Быстрая дуэль
                 </div>
                 <h3 class="text-xl font-black uppercase tracking-wide text-white">1v1 AIM DUEL</h3>
-                <p class="text-xs text-gray-400">До 16 раундов • Rifle / AWP / Pistol • Выделенный сервер под дуэль</p>
+                <p class="text-xs text-gray-400">Напарники 1v1 • Nuke & Overpass • Выделенный сервер под дуэль</p>
               </div>
               <div class="w-11 h-11 rounded-xl bg-faceit-bg border border-faceit-border flex items-center justify-center font-display font-bold text-lg text-amber-400 shrink-0">
                 1v1
               </div>
             </div>
             <div class="mt-3 pt-3 border-t border-faceit-border/70 flex flex-wrap gap-1.5 text-[10px] font-mono text-gray-400">
-              <span class="px-2 py-0.5 rounded bg-faceit-bg">aim_map</span>
-              <span class="px-2 py-0.5 rounded bg-faceit-bg">aim_redline</span>
-              <span class="px-2 py-0.5 rounded bg-faceit-bg">aim_deagle</span>
-              <span class="px-2 py-0.5 rounded bg-faceit-bg">am_water</span>
-              <span class="px-2 py-0.5 rounded bg-faceit-bg">am_grass</span>
-              <span class="px-2 py-0.5 rounded bg-faceit-bg">awp_lego_2</span>
+              <span class="px-2 py-0.5 rounded bg-faceit-bg">Nuke (Напарники)</span>
+              <span class="px-2 py-0.5 rounded bg-faceit-bg">Overpass (Напарники)</span>
             </div>
           </button>
         </div>
@@ -995,21 +987,13 @@
 
     const MAPS_5V5 = [
       { id: 'Mirage',   name: 'Mirage',   code: 'de_mirage' },
-      { id: 'Inferno',  name: 'Inferno',  code: 'de_inferno' },
-      { id: 'Dust2',    name: 'Dust2',    code: 'de_dust2' },
       { id: 'Nuke',     name: 'Nuke',     code: 'de_nuke' },
-      { id: 'Ancient',  name: 'Ancient',  code: 'de_ancient' },
-      { id: 'Anubis',   name: 'Anubis',   code: 'de_anubis' },
-      { id: 'Overpass', name: 'Overpass', code: 'de_overpass' }
+      { id: 'Dust2',    name: 'Dust2',    code: 'de_dust2' }
     ];
 
     const MAPS_1V1 = [
-      { id: 'aim_map',     name: 'aim_map',     code: 'aim_map' },
-      { id: 'aim_redline', name: 'aim_redline', code: 'aim_redline' },
-      { id: 'aim_deagle',  name: 'aim_deagle',  code: 'aim_deagle' },
-      { id: 'am_water',    name: 'am_water',    code: 'am_water' },
-      { id: 'am_grass',    name: 'am_grass',    code: 'am_grass' },
-      { id: 'awp_lego_2',  name: 'awp_lego_2',  code: 'awp_lego_2' }
+      { id: 'Nuke',     name: 'Nuke',     code: 'de_nuke' },
+      { id: 'Overpass', name: 'Overpass', code: 'de_overpass' }
     ];
 
     const SEED_PLAYERS = [
@@ -1367,23 +1351,37 @@
         },
         cvars: is1v1
           ? {
-              mp_maxrounds: 30,
+              mp_maxrounds: 16,
               mp_overtime_enable: 1,
-              mp_free_armor: 2,
-              mp_roundtime: 1.0,
-              hostname: `FACEIT LOCAL 1v1 (${srv.weaponMode}) - Port ${srv.port}`
+              mp_friendlyfire: 0,
+              mp_solid_teammates: 1,
+              bot_quota: 2,
+              bot_quota_mode: "fill",
+              bot_difficulty: 3,
+              custom_bot_difficulty: 3,
+              bot_controllable: 0,
+              bot_defer_to_human_goals: 0,
+              hostname: `FACEIT LOCAL 1v1 Wingman - Port ${srv.port}`
             }
           : {
               mp_maxrounds: 24,
               mp_overtime_enable: 1,
               mp_overtime_maxrounds: 6,
+              mp_friendlyfire: 0,
+              mp_solid_teammates: 1,
+              bot_quota: 10,
+              bot_quota_mode: "fill",
+              bot_difficulty: 3,
+              custom_bot_difficulty: 3,
+              bot_controllable: 0,
+              bot_defer_to_human_goals: 0,
               hostname: `FACEIT LOCAL 5v5 Competitive - Port ${srv.port}`
             }
       };
 
       const batScript = `@echo off
 title CS2 FACEIT LOCAL [${srv.mode.toUpperCase()}] - Port ${srv.port}
-start "" "game\\bin\\win64\\cs2.exe" -dedicated -usercon -insecure +game_type 0 +game_mode 1 -port ${srv.port} +map ${srv.mapCode} +sv_password "${srv.password}" +rcon_password "${srv.rconPassword}" +tv_port ${srv.port + 100} +sv_lan 0
+start "" "game\\bin\\win64\\cs2.exe" -dedicated -usercon -insecure +game_type 0 +game_mode ${is1v1 ? 2 : 1} -port ${srv.port} +map ${srv.mapCode} +sv_password "${srv.password}" +rcon_password "${srv.rconPassword}" +tv_port ${srv.port + 100} +sv_lan 0
 pause`;
 
       document.getElementById('cfg-modal-subtitle').textContent = `Порт ${srv.port} • Режим ${srv.mode.toUpperCase()} • Карта ${srv.mapCode}`;
@@ -1434,6 +1432,18 @@ pause`;
         auth = getAuth(app);
         db = getFirestore(app);
         useFirebase = true;
+
+        // Проверяем возврат после официального входа через Steam OpenID
+        const urlParams = new URLSearchParams(window.location.search);
+        const claimedId = urlParams.get('openid.claimed_id');
+        if (claimedId && claimedId.includes('/openid/id/')) {
+          const match = claimedId.match(/\/openid\/id\/(\d{17})/);
+          if (match && match[1]) {
+            localStorage.setItem('faceit_steam_id', match[1]);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            showToast('Успешный вход через Steam!', 'success');
+          }
+        }
 
         const savedSteamId = localStorage.getItem('faceit_steam_id');
         if (savedSteamId) {
@@ -1712,6 +1722,20 @@ pause`;
       }
     }
 
+    window.loginWithSteamOpenID = function() {
+      const returnTo = window.location.origin + window.location.pathname;
+      const realm = window.location.origin + '/';
+      const params = new URLSearchParams({
+        'openid.ns': 'http://specs.openid.net/auth/2.0',
+        'openid.mode': 'checkid_setup',
+        'openid.return_to': returnTo,
+        'openid.realm': realm,
+        'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
+        'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select'
+      });
+      window.location.href = 'https://steamcommunity.com/openid/login?' + params.toString();
+    };
+
     window.openSteamLoginModal = function() {
       document.getElementById('steam-id-input').value = localStorage.getItem('faceit_steam_id') || '';
       document.getElementById('steam-nick-input').value = currentProfile?.nickname || '';
@@ -1781,6 +1805,11 @@ pause`;
 
     // ==================== ПОИСК МАТЧА ====================
     window.startMatchmaking = function() {
+      if (!localStorage.getItem('faceit_steam_id')) {
+        showToast('Для игры обязателен вход через Steam!', 'error');
+        loginWithSteamOpenID();
+        return;
+      }
       if (currentMatch && currentMatch.phase !== 'finished') {
         switchTab('matchroom');
         return;
