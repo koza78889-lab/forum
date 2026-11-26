@@ -152,6 +152,16 @@
             Подключение...
           </span>
         </div>
+        <div class="flex items-center justify-between text-xs gap-2">
+          <span class="text-gray-400">Бэкенд CS2</span>
+          <span class="flex items-center gap-2">
+            <span id="backend-status-indicator" class="flex items-center gap-1.5 font-semibold text-yellow-400">
+              <span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
+              Проверка...
+            </span>
+            <button id="backend-connect-btn" onclick="initBackendConnection(true)" class="hidden px-2 py-0.5 rounded bg-faceit-orange/20 border border-faceit-orange/40 text-faceit-orange text-[10px] font-bold uppercase cursor-pointer">Разрешить</button>
+          </span>
+        </div>
         <div class="flex items-center justify-between text-xs">
           <span class="text-gray-400">Античит AC</span>
           <span class="text-emerald-400 font-semibold flex items-center gap-1">
@@ -554,6 +564,23 @@
                   </div>
                 </div>
 
+                <!-- Реальная загрузка матча на локальный CS2-сервер -->
+                <div id="mr-match-load-panel" class="bg-faceit-surface border border-faceit-border rounded-2xl p-5 space-y-2">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div class="text-xs font-extrabold uppercase tracking-wider text-white">Загрузка матча на сервере</div>
+                      <div id="mr-match-load-text" class="text-[11px] text-gray-400 mt-0.5">Матч загрузится автоматически после вето.</div>
+                    </div>
+                    <button onclick="applyMatchToServer()" class="px-3.5 py-2 rounded-lg bg-faceit-card hover:bg-faceit-hover border border-faceit-orange/40 text-faceit-orange text-[11px] font-extrabold uppercase tracking-wide transition cursor-pointer shrink-0">
+                      ⟳ Загрузить заново
+                    </button>
+                  </div>
+                  <p class="text-[10px] text-gray-500 leading-relaxed">
+                    Бэкенд <code class="text-faceit-orange">webhook.js</code> меняет карту и грузит MatchZy-конфиг по RCON.
+                    SteamID64 берётся из окна входа через Steam — сервер пускает только игроков из ростера.
+                  </p>
+                </div>
+
                 <!-- Панель завершения матча -->
                 <div id="mr-finish-controls" class="bg-faceit-surface border border-faceit-border rounded-2xl p-5 space-y-4">
                   <div class="border-b border-faceit-border pb-3">
@@ -648,8 +675,8 @@
                 <span class="w-5 h-5 rounded bg-faceit-orange text-white flex items-center justify-center text-[11px]">1</span>
                 Запуск сервера из папки CS2
               </div>
-              <p class="text-gray-400 leading-relaxed">Создай <code class="text-gray-200">start_server.bat</code> в папке установленной CS2:</p>
-              <pre class="bg-black/60 border border-faceit-border rounded-lg p-2.5 text-[11px] font-mono text-faceit-orange overflow-x-auto">start "" "game\bin\win64\cs2.exe" -dedicated -usercon -insecure +game_type 0 +game_mode 1 +map de_mirage -port 27015 +sv_lan 0</pre>
+              <p class="text-gray-400 leading-relaxed">Бэкенд <code class="text-gray-200">webhook.js</code> поднимает сервер сам. Для ручного запуска:</p>
+              <pre class="bg-black/60 border border-faceit-border rounded-lg p-2.5 text-[11px] font-mono text-faceit-orange overflow-x-auto">start "" "D:\Steam\steamapps\common\Counter-Strike Global Offensive\game\bin\win64\cs2.exe" -dedicated -usercon -insecure +game_type 0 +game_mode 1 +map de_mirage -port 27015 +rcon_password faceit123 +exec server.cfg</pre>
             </div>
 
             <div class="bg-faceit-bg border border-faceit-border rounded-xl p-4 space-y-2">
@@ -855,7 +882,7 @@
               Скопировать JSON
             </button>
           </div>
-          <p class="text-[11px] text-gray-400">Сохрани в <code class="text-gray-200">game/csgo/cfg/MatchZy/match_config.json</code> и загрузи на сервере командой <code class="text-emerald-400">matchzy_loadmatch cfg/MatchZy/match_config.json</code></p>
+          <p class="text-[11px] text-gray-400">Бэкенд пишет этот JSON в <code class="text-gray-200">game/csgo/cfg/MatchZy/matches/match_&lt;ID&gt;.json</code> и грузит командой <code class="text-emerald-400">matchzy_loadmatch cfg/MatchZy/matches/match_&lt;ID&gt;.json</code> — вручную копировать не нужно.</p>
           <textarea id="cfg-json-area" readonly rows="10" class="w-full bg-faceit-bg border border-faceit-border rounded-xl p-3 text-xs font-mono text-emerald-300 focus:outline-none resize-none"></textarea>
         </div>
 
@@ -985,16 +1012,116 @@
       { id: 'ist', name: 'Стамбул',    code: 'TR', ping: 36 }
     ];
 
-    const MAPS_5V5 = [
+    let MAPS_5V5 = [
       { id: 'Mirage',   name: 'Mirage',   code: 'de_mirage' },
       { id: 'Nuke',     name: 'Nuke',     code: 'de_nuke' },
       { id: 'Dust2',    name: 'Dust2',    code: 'de_dust2' }
     ];
 
-    const MAPS_1V1 = [
+    let MAPS_1V1 = [
       { id: 'Nuke',     name: 'Nuke',     code: 'de_nuke' },
       { id: 'Overpass', name: 'Overpass', code: 'de_overpass' }
     ];
+
+    // ==================== ЛОКАЛЬНЫЙ БЭКЕНД CS2 ====================
+    // Сайт может быть на HTTPS-хостинге — запрос всё равно идёт на ПК с CS2.
+    // targetAddressSpace: 'loopback' нужен Chrome 142+ для Local Network Access.
+    const BACKEND_URL = 'http://127.0.0.1:3000';
+    let backendOnline = false;
+
+    async function backendRequest(endpoint, method = 'GET', body = null) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      try {
+        const request = new Request(`${BACKEND_URL}${endpoint}`, {
+          method,
+          headers: body ? { 'Content-Type': 'application/json' } : {},
+          body: body ? JSON.stringify(body) : undefined,
+          signal: controller.signal,
+          mode: 'cors',
+          cache: 'no-store',
+          targetAddressSpace: 'loopback'
+        });
+        const response = await fetch(request);
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+        return data;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function backendPermissionState() {
+      if (!navigator.permissions?.query) return 'unknown';
+      try {
+        const result = await navigator.permissions.query({ name: 'loopback-network' });
+        return result.state;
+      } catch (_) {
+        return 'unknown';
+      }
+    }
+
+    function setBackendStatus(state, text) {
+      const el = document.getElementById('backend-status-indicator');
+      const btn = document.getElementById('backend-connect-btn');
+      if (!el) return;
+      const colors = { online: 'text-emerald-400', offline: 'text-red-400', prompt: 'text-amber-400', loading: 'text-yellow-400' };
+      el.className = `flex items-center gap-1.5 font-semibold ${colors[state] || colors.loading}`;
+      el.innerHTML = `<span class="w-2 h-2 rounded-full bg-${state === 'online' ? 'emerald' : state === 'offline' ? 'red' : 'yellow'}-400 ${state === 'loading' ? 'animate-pulse' : ''}"></span>${text}`;
+      if (btn) btn.classList.toggle('hidden', state !== 'prompt' && state !== 'offline');
+    }
+
+    const MAP_DISPLAY_NAMES = {
+      de_mirage: 'Mirage', de_inferno: 'Inferno', de_dust2: 'Dust2', de_nuke: 'Nuke',
+      de_ancient: 'Ancient', de_anubis: 'Anubis', de_overpass: 'Overpass',
+      de_vertigo: 'Vertigo', de_train: 'Train', ar_baggage: 'Baggage', ar_shoots: 'Shoots'
+    };
+
+    function applyBackendMapPools(pools) {
+      // Не меняем карты во время активного вето/матча.
+      if (currentMatch && currentMatch.phase !== 'finished') return;
+      const toMaps = (codes, fallback) => {
+        const list = (codes || [])
+          .filter((code) => /^[a-z0-9_]+$/.test(code))
+          .map((code) => ({
+            id: code.replace(/^(de|ar)_/, ''),
+            name: MAP_DISPLAY_NAMES[code] || code.replace(/^(de|ar)_/, '').toUpperCase(),
+            code
+          }));
+        return list.length ? list : fallback;
+      };
+      MAPS_5V5 = toMaps(pools?.maps5v5, MAPS_5V5);
+      MAPS_1V1 = toMaps(pools?.maps1v1, MAPS_1V1);
+    }
+
+    window.initBackendConnection = async function(force = false) {
+      setBackendStatus('loading', 'Проверка...');
+      const permission = await backendPermissionState();
+      if (permission === 'denied') {
+        backendOnline = false;
+        setBackendStatus('offline', 'Доступ запрещён');
+        showToast('Разрешите доступ к локальному серверу в настройках сайта браузера.', 'error');
+        return;
+      }
+      if (!force && permission === 'prompt') {
+        backendOnline = false;
+        setBackendStatus('prompt', 'Нужно разрешение');
+        return;
+      }
+      try {
+        const health = await backendRequest('/health');
+        backendOnline = !!health.ok && !!health.cs2Exe && !!health.matchzy;
+        if (!backendOnline) throw new Error('CS2 или MatchZy не найдены на ПК');
+        try {
+          applyBackendMapPools(await backendRequest('/maps'));
+        } catch (_) {}
+        setBackendStatus('online', 'Подключён');
+      } catch (err) {
+        backendOnline = false;
+        setBackendStatus('offline', 'Недоступен');
+        console.warn('Локальный бэкенд недоступен:', err.message);
+      }
+    };
 
     const SEED_PLAYERS = [
       { id: 'seed_donk',    nickname: 'donk_local',  elo: 2450, wins: 84, losses: 21, isSeed: true },
@@ -1210,7 +1337,7 @@
         weaponMode: mode === '1v1' ? weaponMode : 'Standard MR12',
         region: region || 'Москва',
         mapName: mapName || 'Ожидание вето...',
-        mapCode: mapCode || (mode === '1v1' ? 'aim_map' : 'de_mirage'),
+        mapCode: mapCode || (mode === '1v1' ? MAPS_1V1[0].code : MAPS_5V5[0].code),
         players: mode === '1v1' ? '2/2' : '10/10',
         password: 'fl_' + Math.random().toString(36).slice(2, 7),
         rconPassword: 'rcon_' + Math.random().toString(36).slice(2, 8),
@@ -1222,18 +1349,39 @@
 
       localServerInstances.unshift(instance);
       renderLocalServers();
-
-      setTimeout(() => {
-        if (instance.status === 'Запуск Docker/CS2...') {
-          instance.status = 'Онлайн / Ждёт игроков';
-          renderLocalServers();
-          if (currentMatch && currentMatch.serverInstanceId === instance.id) {
-            updateMatchRoomServerStatus(instance.status);
-          }
-        }
-      }, 2200);
-
+      startServerOnBackend(instance);
       return instance;
+    }
+
+    async function startServerOnBackend(srv) {
+      if (!backendOnline) {
+        srv.status = 'Ошибка: бэкенд недоступен';
+        renderLocalServers();
+        showToast('Локальный бэкенд не подключён — CS2-сервер не поднят', 'error');
+        return false;
+      }
+      try {
+        const res = await backendRequest('/server/start', 'POST', {
+          port: srv.port,
+          mode: srv.mode,
+          mapCode: srv.mapCode,
+          password: srv.password,
+          rconPassword: srv.rconPassword
+        });
+        srv.password = res.password || srv.password;
+        srv.rconPassword = res.rconPassword || srv.rconPassword;
+        srv.status = res.external ? 'Онлайн / внешний сервер' : 'Онлайн / Ждёт игроков';
+        srv.real = true;
+        renderLocalServers();
+        if (currentMatch && currentMatch.serverInstanceId === srv.id) updateMatchRoomServerStatus(srv.status);
+        return true;
+      } catch (err) {
+        srv.status = `Ошибка запуска: ${err.message}`;
+        srv.real = false;
+        renderLocalServers();
+        showToast(`Не удалось поднять сервер: ${err.message}`, 'error');
+        return false;
+      }
     }
 
     window.spawnStandaloneServer = function(mode) {
@@ -1248,19 +1396,26 @@
         team1Name: currentProfile?.nickname || 'Team 1',
         team2Name: mode === '1v1' ? 'Challenger' : 'Team 2'
       });
-      showToast(`Поднят локальный ${mode} сервер на порту ${srv.port}`, 'success');
+      showToast(`Поднимаем локальный ${mode} сервер на порту ${srv.port}...`, 'info');
     };
 
-    window.stopServerInstance = function(serverId) {
+    window.stopServerInstance = async function(serverId) {
       const srv = localServerInstances.find(s => s.id === serverId);
       if (!srv) return;
+      try {
+        if (backendOnline) await backendRequest('/server/stop', 'POST', { port: srv.port });
+      } catch (err) {
+        showToast(`Ошибка остановки: ${err.message}`, 'error');
+        return;
+      }
       srv.status = 'Остановлен';
+      srv.real = false;
       renderLocalServers();
       showToast(`Сервер 127.0.0.1:${srv.port} остановлен`, 'info');
     };
 
     function renderLocalServers() {
-      const activeCount = localServerInstances.filter(s => s.status !== 'Остановлен').length;
+      const activeCount = localServerInstances.filter(s => s.status.startsWith('Онлайн') || s.status.startsWith('Запуск')).length;
       document.getElementById('nav-servers-count').textContent = activeCount;
       document.getElementById('play-active-servers').textContent = `${activeCount} онлайн`;
 
@@ -1278,15 +1433,18 @@
       }
 
       container.innerHTML = localServerInstances.map(srv => {
-        const isOnline = srv.status === 'Онлайн / Ждёт игроков';
-        const isStarting = srv.status === 'Запуск Docker/CS2...';
+        const isOnline = srv.status.startsWith('Онлайн');
+        const isStarting = srv.status.startsWith('Запуск');
         const isStopped = srv.status === 'Остановлен';
+        const isError = srv.status.startsWith('Ошибка');
 
         const statusBadge = isOnline
-          ? '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>Онлайн / Ждёт игроков</span>'
+          ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>${srv.status}</span>`
           : isStarting
-            ? '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[11px] font-bold"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>Запуск Docker/CS2...</span>'
-            : '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 text-[11px] font-bold">Остановлен</span>';
+            ? '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[11px] font-bold"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>Запуск CS2...</span>'
+            : isError
+              ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 text-[11px] font-bold">${srv.status}</span>`
+              : '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 text-[11px] font-bold">Остановлен</span>';
 
         return `
           <div class="bg-faceit-surface border border-faceit-border rounded-2xl p-5 space-y-4 ${isStopped ? 'opacity-60' : ''}">
@@ -1335,53 +1493,61 @@
       if (!srv) return;
 
       const is1v1 = srv.mode === '1v1';
+      const teamSize = is1v1 ? 1 : 5;
+      const steamId = localStorage.getItem('faceit_steam_id') || currentProfile?.uid || '';
+      const fakeRoster = (start, count, prefix) => {
+        const players = {};
+        for (let i = 0; i < count; i++) {
+          players[`76561199${String(start + i).padStart(9, '0')}`] = `${prefix}${i + 1}`;
+        }
+        return players;
+      };
+
+      // Та же форма конфига, которую бэкенд реально грузит через matchzy_loadmatch.
       const matchZyJson = {
-        matchid: srv.matchId,
+        matchid: Number(String(Date.now()).slice(-9)),
         num_maps: 1,
-        players_per_team: is1v1 ? 1 : 5,
-        min_players_to_ready: is1v1 ? 1 : 5,
         maplist: [srv.mapCode],
         skip_veto: true,
-        side_type: is1v1 ? "always_knife" : "standard",
+        map_sides: ['team1_ct'],
+        players_per_team: teamSize,
+        min_players_to_ready: 1,
         team1: {
-          name: srv.team1Name
+          name: srv.team1Name,
+          players: {
+            ...(/^7656119\d{10}$/.test(steamId) ? { [steamId]: currentProfile?.nickname || 'Player' } : {}),
+            ...fakeRoster(1, /^7656119\d{10}$/.test(steamId) ? teamSize - 1 : teamSize, 'Mate')
+          }
         },
         team2: {
-          name: srv.team2Name
+          name: srv.team2Name,
+          players: fakeRoster(11, teamSize, 'Bot'),
+          bots: true,
+          bot_difficulty: 3
         },
-        cvars: is1v1
-          ? {
-              mp_maxrounds: 16,
-              mp_overtime_enable: 1,
-              mp_friendlyfire: 0,
-              mp_solid_teammates: 1,
-              bot_quota: 2,
-              bot_quota_mode: "fill",
-              bot_difficulty: 3,
-              custom_bot_difficulty: 3,
-              bot_controllable: 0,
-              bot_defer_to_human_goals: 0,
-              hostname: `FACEIT LOCAL 1v1 Wingman - Port ${srv.port}`
-            }
-          : {
-              mp_maxrounds: 24,
-              mp_overtime_enable: 1,
-              mp_overtime_maxrounds: 6,
-              mp_friendlyfire: 0,
-              mp_solid_teammates: 1,
-              bot_quota: 10,
-              bot_quota_mode: "fill",
-              bot_difficulty: 3,
-              custom_bot_difficulty: 3,
-              bot_controllable: 0,
-              bot_defer_to_human_goals: 0,
-              hostname: `FACEIT LOCAL 5v5 Competitive - Port ${srv.port}`
-            }
+        cvars: {
+          mp_friendlyfire: '0',
+          mp_solid_teammates: '1',
+          mp_free_armor: is1v1 ? '2' : '0',
+          mp_maxrounds: is1v1 ? '16' : '24',
+          mp_overtime_enable: is1v1 ? '0' : '1',
+          mp_warmuptime: '10',
+          bot_quota: is1v1 ? '2' : '10',
+          bot_quota_mode: 'fill',
+          bot_difficulty: '3',
+          bot_controllable: '0',
+          bot_defer_to_human_goals: '0',
+          matchzy_ready_mode: '1',
+          matchzy_join_start_delay: '2',
+          sv_password: srv.password,
+          hostname: `FACEIT LOCAL ${srv.mode.toUpperCase()} #${srv.matchId} - Port ${srv.port}`
+        }
       };
+      if (is1v1) matchZyJson.game_mode = '1v1';
 
       const batScript = `@echo off
 title CS2 FACEIT LOCAL [${srv.mode.toUpperCase()}] - Port ${srv.port}
-start "" "game\\bin\\win64\\cs2.exe" -dedicated -usercon -insecure +game_type 0 +game_mode ${is1v1 ? 2 : 1} -port ${srv.port} +map ${srv.mapCode} +sv_password "${srv.password}" +rcon_password "${srv.rconPassword}" +tv_port ${srv.port + 100} +sv_lan 0
+start "" "D:\\Steam\\steamapps\\common\\Counter-Strike Global Offensive\\game\\bin\\win64\\cs2.exe" -dedicated -usercon -insecure +game_type 0 +game_mode 1 -ip 127.0.0.1 -port ${srv.port} +map ${srv.mapCode} +sv_password "${srv.password}" +rcon_password "${srv.rconPassword}" +tv_port ${srv.port + 100} +exec server.cfg
 pause`;
 
       document.getElementById('cfg-modal-subtitle').textContent = `Порт ${srv.port} • Режим ${srv.mode.toUpperCase()} • Карта ${srv.mapCode}`;
@@ -1426,6 +1592,7 @@ pause`;
       selectGameMode('5v5');
       renderLocalServers();
       updateDbStatus('connecting');
+      initBackendConnection();
 
       try {
         const app = initializeApp(firebaseConfig);
@@ -2302,34 +2469,67 @@ pause`;
     }
 
     // ==================== АВТОЗАПУСК МАТЧА НА СЕРВЕРЕ CS2 ====================
+    function setMatchLoadStatus(state, text) {
+      const el = document.getElementById('mr-match-load-text');
+      if (!el) return;
+      const colors = { loading: 'text-yellow-400', ok: 'text-emerald-400', error: 'text-red-400', idle: 'text-gray-400' };
+      el.className = `text-[11px] mt-0.5 ${colors[state] || colors.idle}`;
+      el.textContent = text;
+    }
+
     async function autoStartMatchOnCS2Server() {
-      if (!currentMatch) return;
+      if (!currentMatch || !currentMatch.chosenMap) return;
       const is1v1 = currentMatch.mode === '1v1';
       const steamId = localStorage.getItem('faceit_steam_id') || currentProfile?.uid || '';
+
+      if (!new RegExp('^7656119\\d{10}$').test(steamId)) {
+        const msg = 'Войдите через Steam с корректным SteamID64 — MatchZy не пустит вас на сервер без него.';
+        setMatchLoadStatus('error', msg);
+        showToast(msg, 'error');
+        return;
+      }
+
+      const srv = localServerInstances.find(s => s.id === currentMatch.serverInstanceId);
+      if (!srv) {
+        setMatchLoadStatus('error', 'Сервер матча не найден. Пересоздайте матч.');
+        return;
+      }
+
+      setMatchLoadStatus('loading', `Меняем карту на ${currentMatch.chosenMap.name} и грузим MatchZy-конфиг...`);
       const payload = {
         matchId: currentMatch.matchId,
         mode: currentMatch.mode,
         mapCode: currentMatch.chosenMap.code,
-        team1Name: is1v1 ? currentProfile.nickname : `Team_${currentProfile.nickname}`,
-        team2Name: is1v1 ? currentMatch.team2[0].nickname : `Team_${currentMatch.team2[0].nickname}`,
+        port: srv.port,
+        password: srv.password,
+        rconPassword: srv.rconPassword,
+        team1Name: is1v1 ? (currentProfile?.nickname || 'Player') : `Team_${currentProfile?.nickname || 'Player'}`,
+        team2Name: is1v1 ? (currentMatch.team2[0]?.nickname || 'Opponent') : `Team_${currentMatch.team2[0]?.nickname || 'Team 2'}`,
         playerSteamId: steamId,
         playerName: currentProfile?.nickname || 'Player'
       };
+
       try {
-        const res = await fetch('http://127.0.0.1:3000/start-match', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (res.ok) {
-          showToast(`Сервер CS2 сам переключил карту на ${currentMatch.chosenMap.name} и запустил матч!`, 'success');
-        } else {
-          showToast('webhook.js вернул ошибку. Проверь консоль elo-bot.', 'error');
-        }
+        const res = await backendRequest('/start-match', 'POST', payload);
+        srv.mapCode = res.mapCode || currentMatch.chosenMap.code;
+        srv.status = srv.status.startsWith('Онлайн') ? srv.status : 'Онлайн / матч загружен';
+        renderLocalServers();
+        renderReadyPanel();
+        setMatchLoadStatus('ok', `Матч загружен: ${res.mapCode}, порт ${res.port}. ${res.warning || ''}`.trim());
+        showToast(`Сервер CS2 переключил карту на ${res.mapCode} и загрузил матч!`, 'success');
       } catch (err) {
-        showToast('Не удалось достучаться до webhook.js (127.0.0.1:3000). Запусти node webhook.js!', 'error');
+        setMatchLoadStatus('error', `Ошибка загрузки: ${err.message}. Запустите node webhook.js и нажмите «Загрузить заново».`);
+        showToast(`Не удалось загрузить матч: ${err.message}`, 'error');
       }
     }
+
+    window.applyMatchToServer = function() {
+      if (!currentMatch) {
+        showToast('Сначала найдите матч и пройдите вето.', 'error');
+        return;
+      }
+      autoStartMatchOnCS2Server();
+    };
 
     // ==================== ГОТОВНОСТЬ И ЗАВЕРШЕНИЕ ====================
     function renderReadyPanel() {
@@ -2346,7 +2546,9 @@ pause`;
       const inst = localServerInstances.find(s => s.id === currentMatch.serverInstanceId);
       if (inst) updateMatchRoomServerStatus(inst.status);
 
-      document.getElementById('cs2-connect-cmd').value = `connect 127.0.0.1:27015`;
+      const port = inst?.port || currentMatch.port || 27015;
+      const password = inst?.password || 'faceit_local';
+      document.getElementById('cs2-connect-cmd').value = `connect 127.0.0.1:${port}; password ${password}`;
     }
 
     window.copyConnectCommand = function() {
