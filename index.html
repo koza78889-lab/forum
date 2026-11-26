@@ -204,6 +204,13 @@
           </svg>
         </button>
 
+        <!-- Кнопка входа через Steam -->
+        <button id="steam-login-topbar-btn" onclick="openSteamLoginModal()" class="flex items-center gap-2 bg-[#171a21] hover:bg-[#2a475e] border border-[#66c0f4]/40 text-[#c7d5e0] hover:text-white px-3.5 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition cursor-pointer">
+          <svg class="w-4 h-4 fill-current text-[#66c0f4]" viewBox="0 0 24 24"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.253 0-2.265-1.014-2.265-2.265z"/></svg>
+          <span class="hidden sm:inline">Войти через Steam</span>
+          <span class="sm:hidden">Steam</span>
+        </button>
+
         <!-- Бейдж игрока -->
         <button onclick="switchTab('profile')" class="flex items-center gap-2.5 bg-faceit-card hover:bg-faceit-hover border border-faceit-border px-3 py-1.5 rounded-xl transition">
           <div id="topbar-lvl-badge"></div>
@@ -903,6 +910,48 @@
     </div>
   </div>
 
+  <!-- ==================== МОДАЛКА: ВХОД ЧЕРЕЗ STEAM ==================== -->
+  <div id="steam-login-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="animate-modal bg-[#171a21] border border-[#66c0f4]/40 rounded-2xl max-w-md w-full p-6 sm:p-7 space-y-5 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-white/10 pb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-[#2a475e] flex items-center justify-center text-[#66c0f4]">
+            <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.253 0-2.265-1.014-2.265-2.265z"/></svg>
+          </div>
+          <div>
+            <h3 class="text-base font-black uppercase tracking-wide text-white">Вход через Steam</h3>
+            <p class="text-[11px] text-[#66c0f4]">Привязка SteamID64 для начисления ELO</p>
+          </div>
+        </div>
+        <button onclick="closeSteamLoginModal()" class="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition cursor-pointer">✕</button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-[#c7d5e0] mb-1.5">Ваш SteamID64 (17 цифр)</label>
+          <input id="steam-id-input" type="text" placeholder="Например: 76561198000000000" class="w-full bg-[#101217] border border-white/15 focus:border-[#66c0f4] rounded-xl px-4 py-3 text-sm font-mono text-white focus:outline-none" />
+          <p class="text-[11px] text-gray-400 mt-1">Узнать свой SteamID64 можно на <a href="https://steamid.io" target="_blank" class="text-[#66c0f4] underline">steamid.io</a> — именно по нему сервер CS2 начисляет ELO.</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-[#c7d5e0] mb-1.5">Никнейм в Steam</label>
+          <input id="steam-nick-input" type="text" maxlength="20" placeholder="Ваш ник в CS2..." class="w-full bg-[#101217] border border-white/15 focus:border-[#66c0f4] rounded-xl px-4 py-3 text-sm font-semibold text-white focus:outline-none" />
+        </div>
+
+        <p id="steam-login-error" class="hidden text-xs text-red-400 font-semibold"></p>
+      </div>
+
+      <div class="flex gap-2.5 pt-1">
+        <button onclick="closeSteamLoginModal()" class="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-bold text-xs uppercase tracking-wider transition cursor-pointer">
+          Отмена
+        </button>
+        <button onclick="submitSteamLogin()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#2a475e] to-[#66c0f4] hover:brightness-110 text-white font-black text-xs uppercase tracking-wider transition cursor-pointer shadow-lg">
+          Войти с Steam
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== TOAST УВЕДОМЛЕНИЯ ==================== -->
   <div id="toast-container" class="fixed top-20 right-4 z-50 space-y-2 pointer-events-none"></div>
 
@@ -1386,18 +1435,23 @@ pause`;
         db = getFirestore(app);
         useFirebase = true;
 
-        try {
-          await signInAnonymously(auth);
-          currentUser = auth.currentUser;
-        } catch (authErr) {
-          console.warn('Anonymous Auth не включен в Firebase, используем локальный ID:', authErr.code);
-          let savedUid = localStorage.getItem('faceit_local_uid');
-          if (!savedUid) {
-            savedUid = 'user_' + Math.random().toString(36).slice(2, 12);
-            localStorage.setItem('faceit_local_uid', savedUid);
+        const savedSteamId = localStorage.getItem('faceit_steam_id');
+        if (savedSteamId) {
+          currentUser = { uid: savedSteamId, isSteam: true };
+        } else {
+          try {
+            await signInAnonymously(auth);
+            currentUser = auth.currentUser;
+          } catch (authErr) {
+            let savedUid = localStorage.getItem('faceit_local_uid');
+            if (!savedUid) {
+              savedUid = 'user_' + Math.random().toString(36).slice(2, 12);
+              localStorage.setItem('faceit_local_uid', savedUid);
+            }
+            currentUser = { uid: savedUid };
           }
-          currentUser = { uid: savedUid };
         }
+        updateSteamButtonUI();
 
         if (!currentUser) throw new Error('Не удалось определить UID пользователя');
 
@@ -1642,6 +1696,87 @@ pause`;
       updateUserUI();
       closeEditNicknameModal();
       showToast(`Никнейм обновлён: ${newNick}`, 'success');
+    };
+
+    // ==================== ВХОД ЧЕРЕЗ STEAM ====================
+    function updateSteamButtonUI() {
+      const btn = document.getElementById('steam-login-topbar-btn');
+      if (!btn) return;
+      const savedSteamId = localStorage.getItem('faceit_steam_id');
+      if (savedSteamId) {
+        btn.innerHTML = `
+          <svg class="w-4 h-4 fill-current text-emerald-400" viewBox="0 0 24 24"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0z"/></svg>
+          <span class="hidden sm:inline text-emerald-400">Steam OK</span>
+        `;
+        btn.title = 'Привязан SteamID64: ' + savedSteamId + ' (нажмите, чтобы сменить)';
+      }
+    }
+
+    window.openSteamLoginModal = function() {
+      document.getElementById('steam-id-input').value = localStorage.getItem('faceit_steam_id') || '';
+      document.getElementById('steam-nick-input').value = currentProfile?.nickname || '';
+      document.getElementById('steam-login-error').classList.add('hidden');
+      document.getElementById('steam-login-modal').classList.remove('hidden');
+    };
+
+    window.closeSteamLoginModal = function() {
+      document.getElementById('steam-login-modal').classList.add('hidden');
+    };
+
+    window.submitSteamLogin = async function() {
+      const steamId = document.getElementById('steam-id-input').value.trim();
+      const nick = document.getElementById('steam-nick-input').value.trim();
+      const err = document.getElementById('steam-login-error');
+
+      if (!/^7656119\d{10}$/.test(steamId)) {
+        err.textContent = 'Введите корректный SteamID64 (17 цифр, начинается на 7656119...)';
+        err.classList.remove('hidden');
+        return;
+      }
+      if (nick.length < 2 || nick.length > 20) {
+        err.textContent = 'Никнейм должен быть от 2 до 20 символов.';
+        err.classList.remove('hidden');
+        return;
+      }
+
+      localStorage.setItem('faceit_steam_id', steamId);
+      currentUser = { uid: steamId, isSteam: true };
+
+      if (useFirebase && db) {
+        try {
+          const ref = doc(db, 'players', steamId);
+          const snap = await getDoc(ref);
+          if (!snap.exists()) {
+            const newProfile = {
+              uid: steamId,
+              steamid: steamId,
+              nickname: nick,
+              elo: 1000,
+              wins: 0,
+              losses: 0,
+              isSeed: false,
+              createdAt: Date.now()
+            };
+            await setDoc(ref, newProfile);
+            currentProfile = newProfile;
+          } else {
+            await updateDoc(ref, { nickname: nick, steamid: steamId });
+            currentProfile = { uid: steamId, ...snap.data(), nickname: nick };
+          }
+        } catch (e) {
+          showToast('Ошибка привязки Steam к базе данных', 'error');
+          return;
+        }
+      } else {
+        currentProfile = { uid: steamId, nickname: nick, elo: 1000, wins: 0, losses: 0, isSeed: false };
+      }
+
+      updateSteamButtonUI();
+      updateUserUI();
+      renderLeaderboard();
+      renderProfileHistory();
+      closeSteamLoginModal();
+      showToast(`Вход выполнен через Steam: ${nick}`, 'success');
     };
 
     // ==================== ПОИСК МАТЧА ====================
