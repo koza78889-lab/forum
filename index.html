@@ -2281,8 +2281,9 @@ pause`;
           renderLocalServers();
         }
         playSound('ready');
-        showToast(`Карта выбрана: ${remaining[0].name}! Сервер 127.0.0.1:${currentMatch.port} готов.`, 'success');
+        showToast(`Карта выбрана: ${remaining[0].name}! Автозапуск матча на сервере CS2...`, 'success');
         renderMatchRoom();
+        autoStartMatchOnCS2Server();
         return;
       }
 
@@ -2297,6 +2298,36 @@ pause`;
           playSound('ban');
           checkMapVetoProgress();
         }, 680);
+      }
+    }
+
+    // ==================== АВТОЗАПУСК МАТЧА НА СЕРВЕРЕ CS2 ====================
+    async function autoStartMatchOnCS2Server() {
+      if (!currentMatch) return;
+      const is1v1 = currentMatch.mode === '1v1';
+      const steamId = localStorage.getItem('faceit_steam_id') || currentProfile?.uid || '';
+      const payload = {
+        matchId: currentMatch.matchId,
+        mode: currentMatch.mode,
+        mapCode: currentMatch.chosenMap.code,
+        team1Name: is1v1 ? currentProfile.nickname : `Team_${currentProfile.nickname}`,
+        team2Name: is1v1 ? currentMatch.team2[0].nickname : `Team_${currentMatch.team2[0].nickname}`,
+        playerSteamId: steamId,
+        playerName: currentProfile?.nickname || 'Player'
+      };
+      try {
+        const res = await fetch('http://127.0.0.1:3000/start-match', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          showToast(`Сервер CS2 сам переключил карту на ${currentMatch.chosenMap.name} и запустил матч!`, 'success');
+        } else {
+          showToast('webhook.js вернул ошибку. Проверь консоль elo-bot.', 'error');
+        }
+      } catch (err) {
+        showToast('Не удалось достучаться до webhook.js (127.0.0.1:3000). Запусти node webhook.js!', 'error');
       }
     }
 
@@ -2315,7 +2346,7 @@ pause`;
       const inst = localServerInstances.find(s => s.id === currentMatch.serverInstanceId);
       if (inst) updateMatchRoomServerStatus(inst.status);
 
-      document.getElementById('cs2-connect-cmd').value = `connect 127.0.0.1:${currentMatch.port}; password ${currentMatch.password}`;
+      document.getElementById('cs2-connect-cmd').value = `connect 127.0.0.1:27015`;
     }
 
     window.copyConnectCommand = function() {
