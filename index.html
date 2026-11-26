@@ -849,21 +849,29 @@
     // =========================================================================
     async function initFirebase() {
       try {
-        if (typeof __firebase_config === 'undefined' || !__firebase_config) {
-          throw new Error('Firebase config not provided in environment');
-        }
-        const firebaseConfig = JSON.parse(__firebase_config);
+        const firebaseConfig = {
+          apiKey: "AIzaSyBihb3KH1HAqcq-Ua09V3tSgahUmXotDkE",
+          authDomain: "faciet-feed5.firebaseapp.com",
+          projectId: "faciet-feed5",
+          storageBucket: "faciet-feed5.firebasestorage.app",
+          messagingSenderId: "546808676119",
+          appId: "1:546808676119:web:c0564db4cc8882d7280152"
+        };
+
         const app = initializeApp(firebaseConfig);
         db = getFirestore(app);
         auth = getAuth(app);
 
-        // Authenticate FIRST before any Firestore queries (RULE 3)
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          const cred = await signInWithCustomToken(auth, __initial_auth_token);
-          currentUser = cred.user;
-        } else {
+        try {
           const cred = await signInAnonymously(auth);
           currentUser = cred.user;
+        } catch (authErr) {
+          let fallbackUid = localStorage.getItem('faceit_local_uid');
+          if (!fallbackUid) {
+            fallbackUid = 'user_' + Math.random().toString(36).slice(2, 12);
+            localStorage.setItem('faceit_local_uid', fallbackUid);
+          }
+          currentUser = { uid: fallbackUid };
         }
 
         fbConnected = true;
