@@ -629,9 +629,7 @@
         </div>
 
         <!-- Список активных инстансов -->
-        <div id="local-servers-list" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <!-- Заполняется скриптом -->
-        </div>
+        <div id="local-servers-list" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
 
         <!-- Интерактивный гайд по установке локального сервера CS2 с плагинами -->
         <div class="bg-faceit-surface border border-faceit-border rounded-2xl p-6 space-y-5">
@@ -649,10 +647,10 @@
             <div class="bg-faceit-bg border border-faceit-border rounded-xl p-4 space-y-2">
               <div class="font-black text-white uppercase tracking-wide flex items-center gap-2">
                 <span class="w-5 h-5 rounded bg-faceit-orange text-white flex items-center justify-center text-[11px]">1</span>
-                Скачай CS2 Dedicated Server (SteamCMD)
+                Запуск сервера из папки CS2
               </div>
-              <p class="text-gray-400 leading-relaxed">Скачай SteamCMD от Valve, создай папку <code class="text-gray-200">C:\cs2-server</code> и выполни команду для загрузки файлов сервера:</p>
-              <pre class="bg-black/60 border border-faceit-border rounded-lg p-2.5 text-[11px] font-mono text-faceit-orange overflow-x-auto">steamcmd +force_install_dir C:\cs2-server +login anonymous +app_update 730 validate +quit</pre>
+              <p class="text-gray-400 leading-relaxed">Создай <code class="text-gray-200">start_server.bat</code> в папке установленной CS2:</p>
+              <pre class="bg-black/60 border border-faceit-border rounded-lg p-2.5 text-[11px] font-mono text-faceit-orange overflow-x-auto">start "" "game\bin\win64\cs2.exe" -dedicated -usercon -insecure +game_type 0 +game_mode 1 +map de_mirage -port 27015 +sv_lan 0</pre>
             </div>
 
             <div class="bg-faceit-bg border border-faceit-border rounded-xl p-4 space-y-2">
@@ -662,9 +660,9 @@
               </div>
               <ul class="space-y-1.5 text-gray-400">
                 <li>• <strong class="text-white">Metamod:Source 2.x</strong> — распакуй в <code class="text-gray-300">game/csgo/addons/</code> и пропиши в <code class="text-gray-300">gameinfo.gi</code>.</li>
-                <li>• <strong class="text-white">CounterStrikeSharp</strong> — движок C#-плагинов для CS2.</li>
+                <li>• <strong class="text-white">CounterStrikeSharp</strong> — движок C#-плагинов для CS2 (with-runtime).</li>
                 <li>• <strong class="text-white">MatchZy</strong> — главный плагин для 5v5 и 1v1 (ножевой раунд, <code class="text-gray-300">!ready</code>, <code class="text-gray-300">!pause</code>, загрузка JSON).</li>
-                <li>• <strong class="text-white">CS2-Arena / Multi1v1</strong> (опционально) — для автоматических арен 1 на 1.</li>
+                <li>• <strong class="text-white">CS2-Advertisement</strong> — автосообщения со ссылкой на сайт в чат.</li>
               </ul>
             </div>
           </div>
@@ -870,7 +868,7 @@
               Скопировать .bat
             </button>
           </div>
-          <p class="text-[11px] text-gray-400">Создай файл <code class="text-gray-200">start_27015.bat</code> в папке сервера CS2. Каждый матч запускается на своём уникальном порту!</p>
+          <p class="text-[11px] text-gray-400">Создай файл <code class="text-gray-200">start_27015.bat</code> в папке CS2. Каждый матч запускается на своём уникальном порту!</p>
           <textarea id="cfg-bat-area" readonly rows="5" class="w-full bg-faceit-bg border border-faceit-border rounded-xl p-3 text-xs font-mono text-amber-300 focus:outline-none resize-none"></textarea>
         </div>
       </div>
@@ -911,8 +909,18 @@
   <!-- ==================== FIREBASE & ОСНОВНАЯ ЛОГИКА ==================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // ==================== ВАШ КОНФИГ FIREBASE ====================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBihb3KH1HAqcq-Ua09V3tSgahUmXotDkE",
+      authDomain: "faciet-feed5.firebaseapp.com",
+      projectId: "faciet-feed5",
+      storageBucket: "faciet-feed5.firebasestorage.app",
+      messagingSenderId: "546808676119",
+      appId: "1:546808676119:web:c0564db4cc8882d7280152"
+    };
 
     // ==================== КОНСТАНТЫ ====================
     const LEVEL_THRESHOLDS = [
@@ -976,7 +984,6 @@
     let db = null;
     let auth = null;
     let useFirebase = false;
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'faceit-local-app';
 
     let currentUser = null;
     let currentProfile = null;
@@ -985,11 +992,9 @@
     let activeTab = 'play';
     let soundEnabled = true;
 
-    // Режим игры и оружие (для 1v1)
-    let selectedMode = '5v5'; // '5v5' | '1v1'
+    let selectedMode = '5v5';
     let selectedDuelWeapon = 'Rifle (AK/M4)';
 
-    // Очередь и принятие матча
     let queueInterval = null;
     let queueTimeout = null;
     let queueSeconds = 0;
@@ -1000,7 +1005,6 @@
     let acceptSlots = [];
     let userHasAccepted = false;
 
-    // Активный матч и локальные серверы
     let currentMatch = null;
     let localServerInstances = [];
 
@@ -1186,7 +1190,6 @@
       localServerInstances.unshift(instance);
       renderLocalServers();
 
-      // Переход статуса: Запуск -> Онлайн / Ждёт игроков
       setTimeout(() => {
         if (instance.status === 'Запуск Docker/CS2...') {
           instance.status = 'Онлайн / Ждёт игроков';
@@ -1331,8 +1334,7 @@
 
       const batScript = `@echo off
 title CS2 FACEIT LOCAL [${srv.mode.toUpperCase()}] - Port ${srv.port}
-cd /d C:\\cs2-server\\game\\bin\\win64
-cs2.exe -dedicated -usercon +game_type 0 +game_mode 1 -port ${srv.port} +map ${srv.mapCode} +sv_password "${srv.password}" +rcon_password "${srv.rconPassword}" +tv_port ${srv.port + 100} +exec matchzy_local.cfg
+start "" "game\\bin\\win64\\cs2.exe" -dedicated -usercon -insecure +game_type 0 +game_mode 1 -port ${srv.port} +map ${srv.mapCode} +sv_password "${srv.password}" +rcon_password "${srv.rconPassword}" +tv_port ${srv.port + 100} +sv_lan 0
 pause`;
 
       document.getElementById('cfg-modal-subtitle').textContent = `Порт ${srv.port} • Режим ${srv.mode.toUpperCase()} • Карта ${srv.mapCode}`;
@@ -1378,32 +1380,34 @@ pause`;
       renderLocalServers();
       updateDbStatus('connecting');
 
-      const hasConfig = typeof __firebase_config !== 'undefined' && __firebase_config;
-      if (hasConfig) {
+      try {
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        useFirebase = true;
+
         try {
-          const firebaseConfig = JSON.parse(__firebase_config);
-          const app = initializeApp(firebaseConfig);
-          auth = getAuth(app);
-          db = getFirestore(app);
-          useFirebase = true;
-
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await signInAnonymously(auth);
-          }
-
+          await signInAnonymously(auth);
           currentUser = auth.currentUser;
-          if (!currentUser) throw new Error('Ошибка авторизации');
-
-          await ensureUserProfileAndSeeds();
-          subscribeToRealtimeData();
-          updateDbStatus('online');
-          return;
-        } catch (err) {
-          console.error('Firebase fallback -> Local mode:', err);
-          useFirebase = false;
+        } catch (authErr) {
+          console.warn('Anonymous Auth не включен в Firebase, используем локальный ID:', authErr.code);
+          let savedUid = localStorage.getItem('faceit_local_uid');
+          if (!savedUid) {
+            savedUid = 'user_' + Math.random().toString(36).slice(2, 12);
+            localStorage.setItem('faceit_local_uid', savedUid);
+          }
+          currentUser = { uid: savedUid };
         }
+
+        if (!currentUser) throw new Error('Не удалось определить UID пользователя');
+
+        await ensureUserProfileAndSeeds();
+        subscribeToRealtimeData();
+        updateDbStatus('online');
+        return;
+      } catch (err) {
+        console.error('Firebase fallback -> Local mode:', err);
+        useFirebase = false;
       }
 
       initLocalFallbackMode();
@@ -1427,7 +1431,7 @@ pause`;
     async function ensureUserProfileAndSeeds() {
       if (!currentUser || !db) return;
       const uid = currentUser.uid;
-      const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'players', uid);
+      const playerRef = doc(db, 'players', uid);
       const snap = await getDoc(playerRef);
 
       if (!snap.exists()) {
@@ -1446,12 +1450,12 @@ pause`;
         currentProfile = { uid, ...snap.data() };
       }
 
-      const firstSeedRef = doc(db, 'artifacts', appId, 'public', 'data', 'players', SEED_PLAYERS[0].id);
+      const firstSeedRef = doc(db, 'players', SEED_PLAYERS[0].id);
       const firstSeedSnap = await getDoc(firstSeedRef);
       if (!firstSeedSnap.exists()) {
         await Promise.all(
           SEED_PLAYERS.map(p =>
-            setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', p.id), {
+            setDoc(doc(db, 'players', p.id), {
               uid: p.id,
               nickname: p.nickname,
               elo: p.elo,
@@ -1470,7 +1474,7 @@ pause`;
       if (!currentUser || !db) return;
 
       onSnapshot(
-        collection(db, 'artifacts', appId, 'public', 'data', 'players'),
+        collection(db, 'players'),
         (snapshot) => {
           allPlayers = snapshot.docs.map(d => ({ uid: d.id, ...d.data() }));
           const mine = allPlayers.find(p => p.uid === currentUser.uid);
@@ -1485,7 +1489,7 @@ pause`;
       );
 
       onSnapshot(
-        collection(db, 'artifacts', appId, 'public', 'data', 'matches'),
+        collection(db, 'matches'),
         (snapshot) => {
           allMatches = snapshot.docs
             .map(d => ({ id: d.id, ...d.data() }))
@@ -1625,7 +1629,7 @@ pause`;
       currentProfile.nickname = newNick;
       if (useFirebase && currentUser && db) {
         try {
-          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', currentUser.uid), { nickname: newNick });
+          await updateDoc(doc(db, 'players', currentUser.uid), { nickname: newNick });
         } catch (e) {
           showToast('Ошибка сохранения никнейма', 'error');
           return;
@@ -1825,7 +1829,6 @@ pause`;
 
       const matchId = (is1v1 ? 'DUEL-' : 'LOCAL-') + Math.floor(1000 + Math.random() * 9000);
 
-      // Выделяем отдельный локальный сервер под этот матч
       const srvInstance = createServerInstance({
         matchId,
         mode,
@@ -1858,7 +1861,6 @@ pause`;
         chosenMap: null
       };
 
-      // Дефолтные значения счёта под режим
       document.getElementById('score-team1').value = is1v1 ? 16 : 13;
       document.getElementById('score-team2').value = is1v1 ? 12 : 9;
 
@@ -1898,7 +1900,6 @@ pause`;
 
       const is1v1 = currentMatch.mode === '1v1';
 
-      // Шапка
       const modeBadge = document.getElementById('mr-mode-badge');
       modeBadge.textContent = is1v1 ? '1v1 AIM DUEL' : '5v5 COMPETITIVE';
       modeBadge.className = is1v1
@@ -1918,7 +1919,6 @@ pause`;
       };
       document.getElementById('mr-phase-badge').textContent = phaseNames[currentMatch.phase];
 
-      // Адаптация лейаута 1v1 vs 5v5
       document.getElementById('mr-1v1-head2head').classList.toggle('hidden', !is1v1);
       document.getElementById('mr-team1-col').classList.toggle('hidden', is1v1);
       document.getElementById('mr-team2-col').classList.toggle('hidden', is1v1);
@@ -2210,18 +2210,17 @@ pause`;
       currentProfile.wins = newWins;
       currentProfile.losses = newLosses;
 
-      // Останавливаем выделенный локальный сервер матча
       const inst = localServerInstances.find(s => s.id === currentMatch.serverInstanceId);
       if (inst) { inst.status = 'Остановлен'; renderLocalServers(); }
 
       if (useFirebase && currentUser && db) {
         try {
-          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', currentUser.uid), {
+          await updateDoc(doc(db, 'players', currentUser.uid), {
             elo: newElo,
             wins: newWins,
             losses: newLosses
           });
-          await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'matches'), matchRecord);
+          await addDoc(collection(db, 'matches'), matchRecord);
         } catch (err) {
           console.error('Ошибка сохранения матча:', err);
           showToast('Ошибка записи в базу данных', 'error');
@@ -2316,7 +2315,7 @@ pause`;
                 <div class="w-8 h-8 rounded-lg bg-faceit-bg border border-faceit-border flex items-center justify-center text-xs font-black ${isMe ? 'text-faceit-orange border-faceit-orange/50' : 'text-gray-400'}">
                   ${(p.nickname || 'PL').slice(0, 2).toUpperCase()}
                 </div>
-                <span class="font-bold ${isMe ? 'text-faceit-orange' : 'text-white'}">${p.nickname}</span>
+                <span class="font-bold ${isMe ? 'text-faceit-orange' : 'text-white'}">${p.nickname || 'Player'}</span>
                 ${isMe ? '<span class="px-2 py-0.5 rounded bg-faceit-orange text-white text-[10px] font-black uppercase">ВЫ</span>' : ''}
               </div>
             </td>
