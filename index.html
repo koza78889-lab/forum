@@ -583,7 +583,7 @@
                   <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     <div class="bg-faceit-bg border border-faceit-border rounded-xl p-3">
                       <div class="text-[10px] font-black text-faceit-orange uppercase tracking-wider">Шаг 1</div>
-                      <div class="text-[11px] text-gray-300 mt-1 leading-relaxed">Скопируйте адрес сервера из блока ниже.</div>
+                      <div class="text-[11px] text-gray-300 mt-1 leading-relaxed">Дождитесь статуса «Матч загружен», затем скопируйте адрес из блока ниже. Ранний вход прервётся сменой карты.</div>
                     </div>
                     <div class="bg-faceit-bg border border-faceit-border rounded-xl p-3">
                       <div class="text-[10px] font-black text-faceit-orange uppercase tracking-wider">Шаг 2</div>
@@ -2552,7 +2552,7 @@ pause`;
       joinStatusInterval = setInterval(update, 2000);
     }
 
-    async function autoStartMatchOnCS2Server() {
+    async function autoStartMatchOnCS2Server(force) {
       if (!currentMatch || !currentMatch.chosenMap) return;
       const is1v1 = currentMatch.mode === '1v1';
       const steamId = localStorage.getItem('faceit_steam_id') || currentProfile?.uid || '';
@@ -2573,6 +2573,7 @@ pause`;
       stopJoinStatusPolling();
       setMatchLoadStatus('loading', `Меняем карту на ${currentMatch.chosenMap.name} и грузим MatchZy-конфиг...`);
       const payload = {
+        force: !!force,
         matchId: currentMatch.matchId,
         mode: currentMatch.mode,
         mapCode: currentMatch.chosenMap.code,
@@ -2610,7 +2611,7 @@ pause`;
         showToast('Сначала найдите матч и пройдите вето.', 'error');
         return;
       }
-      autoStartMatchOnCS2Server();
+      autoStartMatchOnCS2Server(true);
     };
 
     // ==================== ГОТОВНОСТЬ И ЗАВЕРШЕНИЕ ====================
