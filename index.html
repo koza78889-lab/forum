@@ -48,6 +48,18 @@
     /* Запасное правило: если CDN Tailwind не загрузился, скрытые панели не должны дублировать интерфейс. */
     .hidden { display: none !important; }
 
+    /* Навигация работает даже без Tailwind: сайдбар слева на ПК, нижнее меню на телефоне. */
+    @media (min-width: 768px) {
+      body { display: flex; flex-direction: row; }
+      .desktop-sidebar { display: flex !important; width: 16rem; flex-shrink: 0; }
+      #mobile-nav { display: none !important; }
+      .main-content { flex: 1; min-width: 0; }
+    }
+    @media (max-width: 767px) {
+      .desktop-sidebar { display: none !important; }
+      #mobile-nav { display: flex !important; }
+    }
+
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #121212; }
     ::-webkit-scrollbar-thumb { background: #333333; border-radius: 9999px; }
@@ -86,7 +98,7 @@
 <body class="bg-faceit-bg text-gray-100 min-h-screen flex flex-col md:flex-row selection:bg-faceit-orange selection:text-white">
 
   <!-- ==================== ЛЕВЫЙ САЙДБАР (DESKTOP) ==================== -->
-  <aside class="hidden md:flex flex-col w-64 bg-faceit-surface border-r border-faceit-border shrink-0 sticky top-0 h-screen z-30">
+  <aside class="desktop-sidebar hidden md:flex flex-col w-64 bg-faceit-surface border-r border-faceit-border shrink-0 sticky top-0 h-screen z-30">
     <!-- Логотип -->
     <div class="h-16 flex items-center px-6 border-b border-faceit-border gap-3">
       <div class="w-9 h-9 rounded-lg bg-faceit-orange flex items-center justify-center shadow-lg shadow-orange-600/20">
@@ -186,7 +198,7 @@
   </aside>
 
   <!-- ==================== ОСНОВНОЙ КОНТЕНТ ==================== -->
-  <div class="flex-1 flex flex-col min-w-0 pb-20 md:pb-0">
+  <div class="main-content flex-1 flex flex-col min-w-0 pb-20 md:pb-0">
 
     <!-- Верхняя панель (Topbar) -->
     <header class="h-16 bg-faceit-surface/90 backdrop-blur-md border-b border-faceit-border sticky top-0 z-20 px-4 sm:px-6 flex items-center justify-between gap-4">
@@ -424,6 +436,9 @@
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 127.0.0.1:27015
               </span>
+              <button onclick="switchTab('play')" class="px-3 py-1.5 rounded-lg bg-faceit-bg border border-faceit-border hover:border-faceit-orange/50 text-gray-300 hover:text-white text-xs font-bold uppercase tracking-wider transition cursor-pointer">
+                ← К поиску
+              </button>
             </div>
 
             <!-- Прогноз Эло -->
@@ -594,12 +609,13 @@
                     </button>
                   </div>
                   <div class="flex flex-col sm:flex-row gap-2">
-                    <input id="cs2-connect-cmd" type="text" readonly value="connect 127.0.0.1:27015; password faceit_local" class="flex-1 bg-faceit-bg border border-faceit-border rounded-xl px-4 py-3 text-xs sm:text-sm font-mono text-faceit-orange focus:outline-none select-all" />
+                    <input id="cs2-connect-cmd" type="text" readonly value="connect 127.0.0.1:27015" class="flex-1 bg-faceit-bg border border-faceit-border rounded-xl px-4 py-3 text-xs sm:text-sm font-mono text-faceit-orange focus:outline-none select-all" />
                     <button onclick="copyConnectCommand()" class="px-5 py-3 rounded-xl bg-faceit-orange hover:bg-faceit-orangeHover active:scale-95 text-white font-extrabold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shrink-0 cursor-pointer">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                       Скопировать IP
                     </button>
                   </div>
+                  <p class="text-[10px] text-gray-500 leading-relaxed">Пароль добавится в команду автоматически, когда матч будет загружен. Не используйте старую команду с <code class="text-gray-300">faceit_local</code> — она больше не подходит.</p>
                 </div>
 
                 <!-- Реальная загрузка матча на локальный CS2-сервер -->
@@ -713,8 +729,8 @@
                 <span class="w-5 h-5 rounded bg-faceit-orange text-white flex items-center justify-center text-[11px]">1</span>
                 Запуск сервера из папки CS2
               </div>
-              <p class="text-gray-400 leading-relaxed">Бэкенд <code class="text-gray-200">webhook.js</code> поднимает сервер сам. Для ручного запуска:</p>
-              <pre class="bg-black/60 border border-faceit-border rounded-lg p-2.5 text-[11px] font-mono text-faceit-orange overflow-x-auto">start "" "D:\Steam\steamapps\common\Counter-Strike Global Offensive\game\bin\win64\cs2.exe" -dedicated -usercon -insecure +game_type 0 +game_mode 1 +map de_mirage -port 27015 +rcon_password faceit123 +exec server.cfg</pre>
+              <p class="text-gray-400 leading-relaxed">Бэкенд <code class="text-gray-200">webhook.js</code> поднимает сервер сам — <strong class="text-white">вручную запускать не нужно</strong>. Если сервер уже открыт отдельным окном, закройте его: иначе бэкенд подумает, что это внешний сервер, и не сможет управлять режимом.</p>
+              <p class="text-gray-400 leading-relaxed">Для запуска самого бэкенда используйте <code class="text-gray-200">start_backend.bat</code> из папки проекта — он просто запускает <code class="text-gray-200">node webhook.js</code>.</p>
             </div>
 
             <div class="bg-faceit-bg border border-faceit-border rounded-xl p-4 space-y-2">
