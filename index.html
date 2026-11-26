@@ -3,10 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FACEIT LOCAL — CS2 Matchmaking & ELO Platform</title>
+  <title>FACEIT LOCAL — CS2 Matchmaking & ELO</title>
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts: Inter & Chakra Petch for Esports UI -->
+
+  <!-- Firebase Compat SDK v10 -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -18,17 +24,17 @@
         extend: {
           colors: {
             faceit: {
-              bg: '#121214',
-              surface: '#18181b',
-              card: '#1f1f24',
-              border: '#2c2c34',
-              orange: '#FF5500',
-              orangeHover: '#ff6a1f',
+              bg: '#0f1115',
+              surface: '#161920',
+              card: '#1d212b',
+              border: '#2a2f3d',
+              orange: '#ff5500',
+              orangeHover: '#ff6a1f'
             }
           },
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
-            display: ['Chakra Petch', 'Inter', 'sans-serif'],
+            display: ['Chakra Petch', 'Inter', 'sans-serif']
           }
         }
       }
@@ -37,81 +43,59 @@
 
   <style>
     body {
-      background-color: #121214;
+      background-color: #0f1115;
       color: #f4f4f5;
       font-family: 'Inter', sans-serif;
       overflow-x: hidden;
     }
 
-    /* Subtle esports grid background */
-    .bg-esports-grid {
+    .bg-esports {
       background-image:
-        radial-gradient(circle at 15% 0%, rgba(255, 85, 0, 0.08), transparent 35%),
-        radial-gradient(circle at 85% 10%, rgba(255, 85, 0, 0.05), transparent 30%),
+        radial-gradient(circle at 12% 0%, rgba(255, 85, 0, 0.10), transparent 35%),
+        radial-gradient(circle at 88% 8%, rgba(255, 85, 0, 0.06), transparent 32%),
         linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
       background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
     }
 
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #121214;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #2c2c34;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #FF5500;
-    }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f1115; }
+    ::-webkit-scrollbar-thumb { background: #2a2f3d; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #ff5500; }
 
-    /* Level 10 glow */
-    .lvl10-glow {
-      filter: drop-shadow(0 0 6px rgba(254, 31, 0, 0.65));
-    }
+    .lvl10-glow { filter: drop-shadow(0 0 7px rgba(254, 31, 0, 0.7)); }
 
-    /* Pulse animation for Match Found */
     @keyframes pulseOrange {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 85, 0, 0.5); }
-      50% { box-shadow: 0 0 0 14px rgba(255, 85, 0, 0); }
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 85, 0, 0.55); }
+      50% { box-shadow: 0 0 0 16px rgba(255, 85, 0, 0); }
     }
-    .animate-pulse-orange {
-      animation: pulseOrange 1.8s infinite;
-    }
+    .animate-pulse-orange { animation: pulseOrange 1.8s infinite; }
 
-    /* Map stylized banners */
-    .map-de_mirage {
-      background: linear-gradient(135deg, #2b1d12 0%, #5c3a1e 55%, #1a1410 100%);
+    @keyframes eloPop {
+      0% { transform: scale(0.6); opacity: 0; }
+      60% { transform: scale(1.12); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
     }
-    .map-de_nuke {
-      background: linear-gradient(135deg, #12212e 0%, #244866 55%, #12171f 100%);
-    }
-    .map-de_dust2 {
-      background: linear-gradient(135deg, #332613 0%, #6e5226 55%, #1c1811 100%);
-    }
-    .map-de_overpass {
-      background: linear-gradient(135deg, #16241b 0%, #2d4c39 55%, #121714 100%);
-    }
-    .map-de_inferno {
-      background: linear-gradient(135deg, #331614 0%, #6b2b22 55%, #1c1212 100%);
-    }
+    .animate-elo-pop { animation: eloPop 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+    .map-de_mirage { background: linear-gradient(135deg, #2b1d12 0%, #633d1e 55%, #16120e 100%); }
+    .map-de_nuke { background: linear-gradient(135deg, #10202e 0%, #234c6e 55%, #10151d 100%); }
+    .map-de_dust2 { background: linear-gradient(135deg, #332613 0%, #735424 55%, #1a1610 100%); }
+    .map-de_overpass { background: linear-gradient(135deg, #14261b 0%, #2b523b 55%, #101713 100%); }
+    .map-de_inferno { background: linear-gradient(135deg, #361513 0%, #732b22 55%, #1a1111 100%); }
   </style>
 </head>
-<body class="bg-esports-grid min-h-screen flex flex-col selection:bg-faceit-orange selection:text-white">
+<body class="bg-esports min-h-screen flex flex-col selection:bg-faceit-orange selection:text-white">
 
   <!-- Toast Container -->
   <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
 
-  <!-- Top Navigation Bar -->
+  <!-- Header -->
   <header class="sticky top-0 z-40 bg-faceit-surface/95 backdrop-blur-md border-b border-faceit-border">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-      <!-- Brand Logo -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      <!-- Brand + Firebase Status -->
       <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('play')">
-        <div class="w-9 h-9 rounded-lg bg-faceit-orange flex items-center justify-center shadow-lg shadow-orange-600/25">
+        <div class="w-9 h-9 rounded-lg bg-faceit-orange flex items-center justify-center shadow-lg shadow-orange-600/30 shrink-0">
           <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
             <path d="M21.5 3.5L13.2 13.8H21.5V20.5H2.5L21.5 3.5Z"/>
           </svg>
@@ -121,36 +105,26 @@
             <span>FACEIT</span>
             <span class="text-faceit-orange">LOCAL</span>
           </div>
-          <div class="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold mt-0.5 flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
-            CS2 • NO-VAC (-insecure)
+          <div id="header-fb-status" class="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold mt-0.5 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse inline-block"></span>
+            Подключение к Firebase...
           </div>
         </div>
       </div>
 
-      <!-- Desktop Navigation -->
+      <!-- Desktop Nav -->
       <nav class="hidden md:flex items-center gap-1 bg-faceit-bg p-1 rounded-xl border border-faceit-border">
-        <button data-tab="play" onclick="switchTab('play')" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all">
-          Играть
-        </button>
-        <button data-tab="leaderboard" onclick="switchTab('leaderboard')" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all">
-          Таблица лидеров
-        </button>
-        <button data-tab="profile" onclick="switchTab('profile')" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all">
-          Профиль
-        </button>
-        <button data-tab="settings" onclick="switchTab('settings')" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all">
-          Сервер / Настройки
-        </button>
+        <button data-tab="play" onclick="switchTab('play')" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all">Играть</button>
+        <button data-tab="leaderboard" onclick="switchTab('leaderboard')" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all">Таблица лидеров</button>
+        <button data-tab="profile" onclick="switchTab('profile')" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all">Профиль</button>
+        <button data-tab="settings" onclick="switchTab('settings')" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all">Сервер / Настройки</button>
       </nav>
 
-      <!-- Header Right: User Profile or Steam Login Button -->
-      <div id="header-auth-area" class="flex items-center gap-3">
-        <!-- Dynamically populated -->
-      </div>
+      <!-- Header Right: Auth / Profile Badge -->
+      <div id="header-auth-area" class="flex items-center gap-3"></div>
     </div>
 
-    <!-- Mobile Navigation -->
+    <!-- Mobile Nav -->
     <div class="md:hidden border-t border-faceit-border bg-faceit-surface px-2 py-2 flex items-center justify-around gap-1">
       <button data-tab="play" onclick="switchTab('play')" class="nav-btn-mobile flex-1 py-2 rounded-lg text-xs font-semibold text-center transition-all">Играть</button>
       <button data-tab="leaderboard" onclick="switchTab('leaderboard')" class="nav-btn-mobile flex-1 py-2 rounded-lg text-xs font-semibold text-center transition-all">Лидеры</button>
@@ -159,94 +133,78 @@
     </div>
   </header>
 
-  <!-- Main Content Container -->
+  <!-- Main Content -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="py-24 flex flex-col items-center justify-center text-center">
-      <div class="w-12 h-12 border-4 border-faceit-border border-t-faceit-orange rounded-full animate-spin mb-4"></div>
-      <p class="text-zinc-400 text-sm font-medium">Подключение к Firebase и синхронизация серверов...</p>
-    </div>
 
-    <!-- Steam Login Gate (Shown when user is not logged in with Steam profile) -->
+    <!-- Steam Login Gate -->
     <section id="steam-login-view" class="hidden max-w-2xl mx-auto py-8">
       <div class="bg-faceit-surface border border-faceit-border rounded-2xl overflow-hidden shadow-2xl">
-        <!-- Banner -->
-        <div class="bg-gradient-to-r from-[#171a21] via-[#1b2838] to-[#2a475e] p-6 sm:p-8 border-b border-faceit-border relative">
+        <div class="bg-gradient-to-r from-[#171a21] via-[#1b2838] to-[#2a475e] p-6 sm:p-8 border-b border-faceit-border">
           <div class="flex items-center gap-4">
             <div class="w-14 h-14 rounded-xl bg-[#171a21] border border-white/10 flex items-center justify-center shrink-0 shadow-lg">
-              <!-- Official Steam Icon SVG -->
               <svg class="w-9 h-9 text-white" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.253 0-2.265-1.014-2.265-2.265z"/>
+                <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0z"/>
               </svg>
             </div>
             <div>
-              <h1 class="font-display text-2xl sm:text-3xl font-bold text-white tracking-wide">
-                ВХОД ЧЕРЕЗ STEAM
-              </h1>
+              <h1 class="font-display text-2xl sm:text-3xl font-bold text-white tracking-wide">ВХОД ЧЕРЕЗ STEAM</h1>
               <p class="text-sky-200/80 text-sm mt-1">
-                Привяжи Steam-аккаунт для игры на локальных серверах CS2, рейтинга ELO и подбора матчей.
+                Привяжи Steam-профиль, чтобы играть 5v5 и 1v1 на локальном CS2 сервере и копить ELO.
               </p>
             </div>
           </div>
         </div>
 
         <div class="p-6 sm:p-8 space-y-6">
-          <!-- Option 1: Real Steam OpenID Redirect -->
-          <div class="bg-faceit-card border border-faceit-border rounded-xl p-5">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-sky-500/20 text-sky-400 border border-sky-500/30">Steam OpenID 2.0</span>
-                  <h2 class="font-semibold text-white">Главная страница Steam</h2>
-                </div>
-                <p class="text-xs text-zinc-400 mt-1.5">
-                  Официальный редирект на <code class="text-zinc-300">steamcommunity.com/openid/login</code>. Работает с GitHub Pages или localhost-мостом.
-                </p>
+          <!-- Steam OpenID 2.0 -->
+          <div class="bg-faceit-card border border-faceit-border rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-sky-500/20 text-sky-400 border border-sky-500/30">Steam OpenID 2.0</span>
+                <h2 class="font-semibold text-white">Главная страница Steam</h2>
               </div>
-              <button onclick="loginWithSteamOpenID()" class="shrink-0 flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl bg-gradient-to-r from-[#1b2838] to-[#2a475e] hover:from-[#24364b] hover:to-[#355975] border border-sky-400/30 text-white font-semibold text-sm transition-all shadow-lg">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0z"/>
-                </svg>
-                Войти через Steam
-              </button>
+              <p class="text-xs text-zinc-400 mt-1.5">
+                Официальный редирект на <code class="text-zinc-300">steamcommunity.com/openid/login</code>. Работает на GitHub Pages и localhost.
+              </p>
             </div>
+            <button onclick="loginWithSteamOpenID()" class="shrink-0 flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl bg-gradient-to-r from-[#1b2838] to-[#2a475e] hover:from-[#24364b] hover:to-[#355975] border border-sky-400/30 text-white font-semibold text-sm transition-all shadow-lg">
+              Войти через Steam
+            </button>
           </div>
 
           <div class="relative flex items-center py-1">
             <div class="flex-grow border-t border-faceit-border"></div>
-            <span class="flex-shrink mx-4 text-xs uppercase tracking-widest text-zinc-500 font-semibold">или мгновенный вход для Localhost / GitHub Pages</span>
+            <span class="flex-shrink mx-4 text-xs uppercase tracking-widest text-zinc-500 font-semibold">или быстрый вход по SteamID64</span>
             <div class="flex-grow border-t border-faceit-border"></div>
           </div>
 
-          <!-- Option 2: Instant SteamID64 Login -->
-          <form id="quick-steam-form" onsubmit="handleQuickSteamLogin(event)" class="space-y-4">
+          <!-- Quick SteamID64 Form -->
+          <form onsubmit="handleQuickSteamLogin(event)" class="space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">Никнейм в CS2</label>
-                <input id="login-nickname" type="text" required maxlength="20" placeholder="Например: s1mple_local"
-                  class="w-full px-4 py-3 rounded-xl bg-faceit-bg border border-faceit-border text-white placeholder-zinc-500 focus:outline-none focus:border-faceit-orange transition-colors text-sm" />
+                <input id="login-nickname" type="text" required maxlength="20" placeholder="Например: donk_local"
+                  class="w-full px-4 py-3 rounded-xl bg-faceit-bg border border-faceit-border text-white placeholder-zinc-500 focus:outline-none focus:border-faceit-orange text-sm" />
               </div>
               <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-                  SteamID64 <span class="text-zinc-500 normal-case">(17 цифр)</span>
-                </label>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">SteamID64 (17 цифр)</label>
                 <div class="flex gap-2">
                   <input id="login-steamid" type="text" required pattern="[0-9]{17}" placeholder="76561198000000000"
-                    class="w-full px-4 py-3 rounded-xl bg-faceit-bg border border-faceit-border text-white placeholder-zinc-500 focus:outline-none focus:border-faceit-orange transition-colors text-sm font-mono" />
+                    class="w-full px-4 py-3 rounded-xl bg-faceit-bg border border-faceit-border text-white placeholder-zinc-500 focus:outline-none focus:border-faceit-orange text-sm font-mono" />
                   <button type="button" onclick="generateRandomSteamId()" title="Сгенерировать SteamID64"
-                    class="px-3 rounded-xl bg-faceit-card hover:bg-zinc-700 border border-faceit-border text-zinc-300 text-xs font-semibold transition-colors shrink-0">
+                    class="px-3 rounded-xl bg-faceit-card hover:bg-zinc-700 border border-faceit-border text-zinc-300 text-xs font-semibold shrink-0">
                     🎲
                   </button>
                 </div>
               </div>
             </div>
 
-            <div class="flex items-center justify-between pt-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
               <div class="text-xs text-zinc-400">
-                Стартовый рейтинг: <span class="text-white font-semibold">1000 ELO</span> (3 уровень)
+                Стартовый рейтинг для нового профиля: <span class="text-white font-semibold">1000 ELO (4 LVL)</span>
               </div>
               <button type="submit" class="px-6 py-3 rounded-xl bg-faceit-orange hover:bg-faceit-orangeHover text-white font-bold text-sm uppercase tracking-wider transition-all shadow-lg shadow-orange-600/25">
-                Создать профиль и играть
+                Войти и играть
               </button>
             </div>
           </form>
@@ -254,35 +212,32 @@
       </div>
     </section>
 
-    <!-- MAIN APP TABS (Visible after Steam login) -->
+    <!-- Main App Content -->
     <div id="app-content" class="hidden">
 
-      <!-- ==================== TAB 1: PLAY (MATCHMAKING & MATCH ROOM) ==================== -->
+      <!-- ==================== TAB 1: PLAY ==================== -->
       <section id="tab-play" class="tab-panel space-y-6">
 
-        <!-- Active Match Room Container (Shown when in veto / live / finished match) -->
-        <div id="active-match-container" class="hidden space-y-6">
-          <!-- Populated dynamically by renderActiveMatch() -->
-        </div>
+        <!-- Active Match Room -->
+        <div id="active-match-container" class="hidden space-y-6"></div>
 
-        <!-- Matchmaking Lobby Container (Shown when not in an active match) -->
+        <!-- Matchmaking Lobby -->
         <div id="matchmaking-lobby" class="space-y-6">
-          <!-- Hero Stats & Live Queue Banner -->
+          <!-- Hero Card -->
           <div class="bg-faceit-surface border border-faceit-border rounded-2xl p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
             <div class="flex items-center gap-4">
               <div id="lobby-user-badge" class="shrink-0"></div>
               <div>
                 <div class="flex items-center gap-2.5 flex-wrap">
                   <h1 id="lobby-user-name" class="font-display text-2xl font-bold text-white">Player</h1>
-                  <span class="px-2.5 py-0.5 rounded-md bg-faceit-card border border-faceit-border text-xs font-mono text-zinc-300" id="lobby-user-elo">1000 ELO</span>
+                  <span id="lobby-user-elo" class="px-2.5 py-0.5 rounded-md bg-faceit-card border border-faceit-border text-xs font-mono text-faceit-orange font-bold">1000 ELO</span>
                 </div>
                 <p class="text-sm text-zinc-400 mt-1">
-                  Выбери режим игры. Если на сайте есть другие игроки в поиске, вас соединит в одно лобби (вместе или против). Пустые слоты займут боты твоего уровня.
+                  Живой подбор через Firebase. Если в очереди есть другие игроки — вас закинет в одно лобби (вместе или против). Свободные слоты займут боты <code class="text-zinc-300">Bot_Lvl{N}</code> под средний ELO.
                 </p>
               </div>
             </div>
 
-            <!-- Live Online Queue Indicators -->
             <div class="flex items-center gap-3 w-full lg:w-auto">
               <div class="flex-1 lg:flex-initial bg-faceit-bg border border-faceit-border rounded-xl px-4 py-3 text-center">
                 <div class="text-[11px] uppercase tracking-wider text-zinc-400 font-semibold">В поиске 5v5</div>
@@ -295,70 +250,47 @@
             </div>
           </div>
 
-          <!-- Mode Selector Cards -->
+          <!-- Mode Cards -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- 5v5 Competitive Mode Card -->
+            <!-- 5v5 -->
             <div id="mode-card-5v5" onclick="selectMode('5v5')"
-              class="cursor-pointer group bg-faceit-surface border-2 border-faceit-orange rounded-2xl p-6 transition-all relative overflow-hidden">
+              class="cursor-pointer bg-faceit-surface border-2 border-faceit-orange rounded-2xl p-6 transition-all">
               <div class="flex items-start justify-between gap-4">
                 <div>
-                  <span class="inline-block px-2.5 py-1 rounded-md bg-faceit-orange/15 text-faceit-orange text-xs font-bold uppercase tracking-wider mb-3">
-                    Классика • MR12
-                  </span>
+                  <span class="inline-block px-2.5 py-1 rounded-md bg-faceit-orange/15 text-faceit-orange text-xs font-bold uppercase tracking-wider mb-3">Классика • MR12</span>
                   <h2 class="font-display text-2xl font-bold text-white">5 на 5 — Соревновательный</h2>
-                  <p class="text-sm text-zinc-400 mt-1.5">
-                    Полноценный командный матч 5x5 с голосованием за карты. Реальные игроки + умные боты по среднему ELO лобби.
-                  </p>
+                  <p class="text-sm text-zinc-400 mt-1.5">Командный матч с голосованием за карты и умными ботами по уровню ELO.</p>
                 </div>
-                <div class="w-12 h-12 rounded-xl bg-faceit-card border border-faceit-border flex items-center justify-center font-display font-bold text-lg text-faceit-orange shrink-0">
-                  5v5
-                </div>
+                <div class="w-12 h-12 rounded-xl bg-faceit-card border border-faceit-border flex items-center justify-center font-display font-bold text-lg text-faceit-orange shrink-0">5v5</div>
               </div>
-
-              <!-- Map Pool Pills -->
-              <div class="mt-5 pt-4 border-t border-faceit-border">
-                <div class="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold mb-2">Пул карт (Veto):</div>
-                <div class="flex flex-wrap gap-2">
-                  <span class="px-3 py-1 rounded-lg bg-faceit-bg border border-faceit-border text-xs font-semibold text-zinc-200">Mirage <span class="text-zinc-500 font-mono">de_mirage</span></span>
-                  <span class="px-3 py-1 rounded-lg bg-faceit-bg border border-faceit-border text-xs font-semibold text-zinc-200">Nuke <span class="text-zinc-500 font-mono">de_nuke</span></span>
-                  <span class="px-3 py-1 rounded-lg bg-faceit-bg border border-faceit-border text-xs font-semibold text-zinc-200">Dust 2 <span class="text-zinc-500 font-mono">de_dust2</span></span>
-                </div>
+              <div class="mt-5 pt-4 border-t border-faceit-border flex flex-wrap gap-2">
+                <span class="px-3 py-1 rounded-lg bg-faceit-bg border border-faceit-border text-xs font-semibold text-zinc-200">Mirage <span class="text-zinc-500 font-mono">de_mirage</span></span>
+                <span class="px-3 py-1 rounded-lg bg-faceit-bg border border-faceit-border text-xs font-semibold text-zinc-200">Nuke <span class="text-zinc-500 font-mono">de_nuke</span></span>
+                <span class="px-3 py-1 rounded-lg bg-faceit-bg border border-faceit-border text-xs font-semibold text-zinc-200">Dust 2 <span class="text-zinc-500 font-mono">de_dust2</span></span>
               </div>
             </div>
 
-            <!-- 1v1 Duel Mode Card -->
+            <!-- 1v1 -->
             <div id="mode-card-1v1" onclick="selectMode('1v1')"
-              class="cursor-pointer group bg-faceit-surface border-2 border-faceit-border hover:border-zinc-600 rounded-2xl p-6 transition-all relative overflow-hidden">
+              class="cursor-pointer bg-faceit-surface border-2 border-faceit-border hover:border-zinc-600 rounded-2xl p-6 transition-all">
               <div class="flex items-start justify-between gap-4">
                 <div>
-                  <span class="inline-block px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-3">
-                    Дуэль • Aim / Clutch
-                  </span>
+                  <span class="inline-block px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-3">Дуэль • Aim / Clutch</span>
                   <h2 class="font-display text-2xl font-bold text-white">1 на 1 — Дуэль</h2>
-                  <p class="text-sm text-zinc-400 mt-1.5">
-                    Быстрый матч 1 на 1 против другого игрока в очереди или против бота твоего уровня ELO.
-                  </p>
+                  <p class="text-sm text-zinc-400 mt-1.5">Быстрая дуэль против другого игрока в очереди или бота твоего уровня.</p>
                 </div>
-                <div class="w-12 h-12 rounded-xl bg-faceit-card border border-faceit-border flex items-center justify-center font-display font-bold text-lg text-emerald-400 shrink-0">
-                  1v1
-                </div>
+                <div class="w-12 h-12 rounded-xl bg-faceit-card border border-faceit-border flex items-center justify-center font-display font-bold text-lg text-emerald-400 shrink-0">1v1</div>
               </div>
-
-              <!-- Map Pool Pills -->
-              <div class="mt-5 pt-4 border-t border-faceit-border">
-                <div class="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold mb-2">Пул карт (Veto):</div>
-                <div class="flex flex-wrap gap-2">
-                  <span class="px-3 py-1 rounded-lg bg-faceit-bg border border-faceit-border text-xs font-semibold text-zinc-200">Overpass <span class="text-zinc-500 font-mono">de_overpass</span></span>
-                  <span class="px-3 py-1 rounded-lg bg-faceit-bg border border-faceit-border text-xs font-semibold text-zinc-200">Nuke <span class="text-zinc-500 font-mono">de_nuke</span></span>
-                  <span class="px-3 py-1 rounded-lg bg-faceit-bg border border-faceit-border text-xs font-semibold text-zinc-200">Inferno <span class="text-zinc-500 font-mono">de_inferno</span></span>
-                </div>
+              <div class="mt-5 pt-4 border-t border-faceit-border flex flex-wrap gap-2">
+                <span class="px-3 py-1 rounded-lg bg-faceit-bg border border-faceit-border text-xs font-semibold text-zinc-200">Overpass <span class="text-zinc-500 font-mono">de_overpass</span></span>
+                <span class="px-3 py-1 rounded-lg bg-faceit-bg border border-faceit-border text-xs font-semibold text-zinc-200">Nuke <span class="text-zinc-500 font-mono">de_nuke</span></span>
+                <span class="px-3 py-1 rounded-lg bg-faceit-bg border border-faceit-border text-xs font-semibold text-zinc-200">Inferno <span class="text-zinc-500 font-mono">de_inferno</span></span>
               </div>
             </div>
           </div>
 
-          <!-- Queue Action Box -->
+          <!-- Queue Control -->
           <div class="bg-faceit-surface border border-faceit-border rounded-2xl p-6">
-            <!-- Idle State -->
             <div id="queue-idle-panel" class="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div>
                 <div class="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Выбранный режим</div>
@@ -372,7 +304,6 @@
               </button>
             </div>
 
-            <!-- Searching State -->
             <div id="queue-searching-panel" class="hidden space-y-5">
               <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
@@ -386,14 +317,14 @@
                       <span id="queue-timer" class="font-mono text-faceit-orange">00:00</span>
                     </div>
                     <div class="text-sm text-zinc-400 mt-0.5">
-                      Авто-добор ботами через <span id="queue-autofill-countdown" class="text-white font-bold font-mono">15</span> сек. Реальных игроков в очереди: <span id="queue-real-count" class="text-emerald-400 font-bold">1</span>
+                      Авто-добор ботами через <span id="queue-autofill-countdown" class="text-white font-bold font-mono">12</span> сек • Реальных игроков: <span id="queue-real-count" class="text-emerald-400 font-bold">1</span>
                     </div>
                   </div>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                  <button onclick="forceStartWithBots()" class="flex-1 md:flex-initial px-5 py-3 rounded-xl bg-faceit-orange hover:bg-faceit-orangeHover text-white font-bold text-sm transition-all shadow-lg shadow-orange-600/20">
-                    Добить ботами и начать
+                  <button onclick="forceStartWithBots()" class="flex-1 md:flex-initial px-5 py-3 rounded-xl bg-faceit-orange hover:bg-faceit-orangeHover text-white font-bold text-sm transition-all">
+                    Добить ботами сейчас
                   </button>
                   <button onclick="cancelQueue()" class="flex-1 md:flex-initial px-5 py-3 rounded-xl bg-faceit-card hover:bg-zinc-700 border border-faceit-border text-zinc-200 font-semibold text-sm transition-all">
                     Отмена
@@ -401,49 +332,17 @@
                 </div>
               </div>
 
-              <!-- Players currently in queue list -->
               <div class="bg-faceit-bg border border-faceit-border rounded-xl p-4">
-                <div class="text-xs uppercase tracking-wider text-zinc-500 font-semibold mb-3">Игроки в твоей очереди сейчас:</div>
-                <div id="queue-players-list" class="flex flex-wrap gap-2.5">
-                  <!-- Populated live from Firestore -->
-                </div>
+                <div class="text-xs uppercase tracking-wider text-zinc-500 font-semibold mb-3">Игроки в очереди сейчас:</div>
+                <div id="queue-players-list" class="flex flex-wrap gap-2.5"></div>
               </div>
             </div>
           </div>
 
-          <!-- Bot Skill Tier Legend -->
+          <!-- ELO Scale Legend -->
           <div class="bg-faceit-surface border border-faceit-border rounded-2xl p-5">
-            <h3 class="text-xs uppercase tracking-wider text-zinc-400 font-bold mb-3">Система уровней FACEIT и сложность ботов CS2</h3>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-              <div class="bg-faceit-bg border border-faceit-border rounded-xl p-3 flex items-center gap-3">
-                <div id="legend-lvl-1"></div>
-                <div>
-                  <div class="font-bold text-zinc-200">Уровень 1–2</div>
-                  <div class="text-zinc-500 font-mono">Easy • skill 0</div>
-                </div>
-              </div>
-              <div class="bg-faceit-bg border border-faceit-border rounded-xl p-3 flex items-center gap-3">
-                <div id="legend-lvl-4"></div>
-                <div>
-                  <div class="font-bold text-zinc-200">Уровень 3–5</div>
-                  <div class="text-zinc-500 font-mono">Normal • skill 1</div>
-                </div>
-              </div>
-              <div class="bg-faceit-bg border border-faceit-border rounded-xl p-3 flex items-center gap-3">
-                <div id="legend-lvl-8"></div>
-                <div>
-                  <div class="font-bold text-zinc-200">Уровень 6–8</div>
-                  <div class="text-zinc-500 font-mono">Hard • skill 2</div>
-                </div>
-              </div>
-              <div class="bg-faceit-bg border border-faceit-border rounded-xl p-3 flex items-center gap-3">
-                <div id="legend-lvl-10"></div>
-                <div>
-                  <div class="font-bold text-zinc-200">Уровень 9–10</div>
-                  <div class="text-zinc-500 font-mono">Expert • skill 3+</div>
-                </div>
-              </div>
-            </div>
+            <h3 class="text-xs uppercase tracking-wider text-zinc-400 font-bold mb-3">Сетка уровней FACEIT (1–10 LVL) и боты</h3>
+            <div id="elo-scale-grid" class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs"></div>
           </div>
         </div>
       </section>
@@ -453,10 +352,10 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 class="font-display text-2xl font-bold text-white uppercase tracking-wide">Таблица лидеров</h1>
-            <p class="text-sm text-zinc-400 mt-1">Живой рейтинг всех игроков FACEIT LOCAL в Firebase, отсортированный по ELO.</p>
+            <p class="text-sm text-zinc-400 mt-1">Синхронизируется в реальном времени из коллекции <code class="text-zinc-300">users</code> в Firebase.</p>
           </div>
           <div class="px-4 py-2 rounded-xl bg-faceit-surface border border-faceit-border text-xs text-zinc-400">
-            Всего игроков: <span id="leaderboard-count" class="text-white font-bold">0</span>
+            Игроков в базе: <span id="leaderboard-count" class="text-white font-bold">0</span>
           </div>
         </div>
 
@@ -468,14 +367,12 @@
                   <th class="py-3.5 px-4 font-semibold w-16">#</th>
                   <th class="py-3.5 px-4 font-semibold">Игрок</th>
                   <th class="py-3.5 px-4 font-semibold hidden sm:table-cell">SteamID64</th>
-                  <th class="py-3.5 px-4 font-semibold text-center">Матчи (В / П)</th>
+                  <th class="py-3.5 px-4 font-semibold text-center">В / П</th>
                   <th class="py-3.5 px-4 font-semibold text-center">Винрейт</th>
                   <th class="py-3.5 px-4 font-semibold text-right">ELO</th>
                 </tr>
               </thead>
-              <tbody id="leaderboard-tbody" class="divide-y divide-faceit-border text-sm">
-                <!-- Populated live from Firestore -->
-              </tbody>
+              <tbody id="leaderboard-tbody" class="divide-y divide-faceit-border text-sm"></tbody>
             </table>
           </div>
         </div>
@@ -483,7 +380,6 @@
 
       <!-- ==================== TAB 3: PROFILE ==================== -->
       <section id="tab-profile" class="tab-panel hidden space-y-6">
-        <!-- Profile Header Card -->
         <div class="bg-faceit-surface border border-faceit-border rounded-2xl p-6">
           <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div class="flex items-center gap-5">
@@ -491,11 +387,9 @@
               <div>
                 <div class="flex items-center gap-3 flex-wrap">
                   <h1 id="profile-nickname" class="font-display text-3xl font-bold text-white">Player</h1>
-                  <span id="profile-level-tag" class="px-2.5 py-0.5 rounded-md bg-faceit-card border border-faceit-border text-xs font-bold text-faceit-orange">LVL 3</span>
+                  <span id="profile-level-tag" class="px-2.5 py-0.5 rounded-md bg-faceit-card border border-faceit-border text-xs font-bold text-faceit-orange">LVL 4</span>
                 </div>
-                <div class="text-xs font-mono text-zinc-400 mt-1.5 flex items-center gap-2">
-                  <span>SteamID64: <span id="profile-steamid" class="text-zinc-200">---</span></span>
-                </div>
+                <div class="text-xs font-mono text-zinc-400 mt-1.5">SteamID64: <span id="profile-steamid" class="text-zinc-200">---</span></div>
               </div>
             </div>
 
@@ -515,93 +409,85 @@
             </div>
           </div>
 
-          <!-- ELO Progress Bar to Next Level -->
           <div class="mt-6 pt-5 border-t border-faceit-border">
             <div class="flex items-center justify-between text-xs mb-2">
-              <span class="text-zinc-400 font-semibold" id="elo-progress-label">Прогресс до 4 уровня</span>
-              <span class="font-mono text-zinc-300 font-semibold" id="elo-progress-numbers">1000 / 1101 ELO</span>
+              <span class="text-zinc-400 font-semibold" id="elo-progress-label">Прогресс до следующего уровня</span>
+              <span class="font-mono text-zinc-300 font-semibold" id="elo-progress-numbers">1000 / 1051 ELO</span>
             </div>
             <div class="w-full h-3 bg-faceit-bg rounded-full overflow-hidden border border-faceit-border">
-              <div id="elo-progress-bar" class="h-full bg-gradient-to-r from-faceit-orange to-amber-400 transition-all duration-500" style="width: 30%;"></div>
+              <div id="elo-progress-bar" class="h-full bg-gradient-to-r from-faceit-orange to-amber-400 transition-all duration-500" style="width: 50%;"></div>
             </div>
           </div>
         </div>
 
-        <!-- Match History -->
         <div class="bg-faceit-surface border border-faceit-border rounded-2xl p-6">
           <h2 class="font-display text-xl font-bold text-white uppercase tracking-wide mb-4">История матчей</h2>
-          <div id="profile-match-history" class="space-y-3">
-            <!-- Populated from Firestore -->
-          </div>
+          <div id="profile-match-history" class="space-y-3"></div>
         </div>
       </section>
 
       <!-- ==================== TAB 4: SERVER & SETTINGS ==================== -->
       <section id="tab-settings" class="tab-panel hidden space-y-6">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Localhost CS2 Server Settings -->
+          <!-- Server Settings -->
           <div class="bg-faceit-surface border border-faceit-border rounded-2xl p-6 space-y-5">
             <div>
               <h2 class="font-display text-xl font-bold text-white uppercase tracking-wide">Локальный CS2 сервер</h2>
-              <p class="text-xs text-zinc-400 mt-1">Настройки подключения для localhost / OpenCode плагинов. Сервер работает без VAC (<code class="text-amber-400">-insecure</code>).</p>
+              <p class="text-xs text-zinc-400 mt-1">Настройки подключения для localhost и Python-моста <code class="text-zinc-300">bridge.py</code> (без VAC).</p>
             </div>
 
             <div class="space-y-4">
               <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">IP:Port локального сервера</label>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">IP:Port сервера</label>
                 <input id="setting-server-ip" type="text" value="127.0.0.1:27015"
                   class="w-full px-4 py-3 rounded-xl bg-faceit-bg border border-faceit-border text-white font-mono text-sm focus:outline-none focus:border-faceit-orange" />
               </div>
 
               <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">Steam OpenID Return URL (GitHub Pages / Localhost)</label>
-                <input id="setting-openid-url" type="text" placeholder="https://yourname.github.io/faceit-local/"
+                <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">Steam OpenID Return URL</label>
+                <input id="setting-openid-url" type="text" placeholder="Оставь пустым для текущего URL"
                   class="w-full px-4 py-3 rounded-xl bg-faceit-bg border border-faceit-border text-white font-mono text-sm focus:outline-none focus:border-faceit-orange" />
-                <p class="text-[11px] text-zinc-500 mt-1">Оставь пустым, чтобы использовать текущий URL браузера.</p>
               </div>
 
-              <button onclick="saveSettings()" class="px-6 py-3 rounded-xl bg-faceit-orange hover:bg-faceit-orangeHover text-white font-bold text-sm transition-all">
-                Сохранить настройки
+              <button onclick="saveServerSettings()" class="px-6 py-3 rounded-xl bg-faceit-orange hover:bg-faceit-orangeHover text-white font-bold text-sm transition-all">
+                Сохранить настройки сервера
               </button>
             </div>
 
-            <!-- OpenCode CS2 Dedicated Server Launch Helper -->
             <div class="bg-faceit-bg border border-faceit-border rounded-xl p-4 space-y-2">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Команда запуска CS2 сервера (Без VAC)</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Запуск CS2 сервера (Без VAC)</span>
                 <button onclick="copyTextToClipboard(document.getElementById('cs2-launch-cmd').textContent)" class="text-xs text-faceit-orange hover:underline font-semibold">Копировать</button>
               </div>
-              <pre id="cs2-launch-cmd" class="text-xs font-mono text-zinc-300 overflow-x-auto whitespace-pre-wrap break-all">cs2.exe -dedicated -insecure -console -usercon +game_type 0 +game_mode 1 +map de_mirage +sv_lan 0 +ip 127.0.0.1 -port 27015</pre>
+              <pre id="cs2-launch-cmd" class="text-xs font-mono text-zinc-300 overflow-x-auto whitespace-pre-wrap break-all">cs2.exe -dedicated -insecure -usercon +rcon_password faceit_local_pass +sv_lan 0 -port 27015 +game_type 0 +game_mode 1 +map de_mirage</pre>
             </div>
           </div>
 
-          <!-- Firebase & Account Diagnostics -->
+          <!-- Firebase Config -->
           <div class="bg-faceit-surface border border-faceit-border rounded-2xl p-6 space-y-5">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="font-display text-xl font-bold text-white uppercase tracking-wide">Конфигурация Firebase</h2>
+                <p class="text-xs text-zinc-400 mt-1">Встроен твой проект <code class="text-zinc-300">faciet-feed5</code>. Подключается автоматически.</p>
+              </div>
+              <span id="settings-fb-badge" class="px-3 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-bold">Подключено</span>
+            </div>
+
             <div>
-              <h2 class="font-display text-xl font-bold text-white uppercase tracking-wide">Статус Firebase и аккаунта</h2>
-              <p class="text-xs text-zinc-400 mt-1">Реальное время (Firestore) используется для подбора игроков, профилей, ELO и таблицы лидеров.</p>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">Firebase Config (JSON)</label>
+              <textarea id="setting-fb-config" rows="8"
+                class="w-full p-3.5 rounded-xl bg-faceit-bg border border-faceit-border text-zinc-200 font-mono text-xs focus:outline-none focus:border-faceit-orange"></textarea>
             </div>
 
-            <div class="space-y-3 text-sm">
-              <div class="flex items-center justify-between p-3.5 rounded-xl bg-faceit-bg border border-faceit-border">
-                <span class="text-zinc-400">Соединение с базой</span>
-                <span id="settings-fb-status" class="flex items-center gap-2 font-semibold text-emerald-400">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Подключено
-                </span>
-              </div>
-              <div class="flex items-center justify-between p-3.5 rounded-xl bg-faceit-bg border border-faceit-border">
-                <span class="text-zinc-400">Античит (VAC)</span>
-                <span class="px-2.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 text-xs font-bold">ОТКЛЮЧЕН (-insecure)</span>
-              </div>
-              <div class="p-3.5 rounded-xl bg-faceit-bg border border-faceit-border space-y-1">
-                <div class="text-xs text-zinc-400">Твой Firebase UID (для мультиплеера):</div>
-                <div id="settings-user-uid" class="font-mono text-xs text-zinc-200 break-all">---</div>
-              </div>
-            </div>
-
-            <div class="pt-2 border-t border-faceit-border flex flex-wrap gap-3">
-              <button onclick="logoutSteamProfile()" class="px-4 py-2.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 text-xs font-bold transition-all">
-                Сменить Steam-аккаунт
+            <div class="flex flex-wrap items-center gap-3">
+              <button onclick="applyCustomFirebaseConfig()" class="px-5 py-2.5 rounded-xl bg-faceit-orange hover:bg-faceit-orangeHover text-white font-bold text-xs uppercase tracking-wider transition-all">
+                Применить конфиг
+              </button>
+              <button onclick="resetDefaultFirebaseConfig()" class="px-4 py-2.5 rounded-xl bg-faceit-card hover:bg-zinc-700 border border-faceit-border text-zinc-300 font-semibold text-xs transition-all">
+                Сбросить на встроенный
+              </button>
+              <button onclick="logoutSteamProfile()" class="ml-auto px-4 py-2.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 text-xs font-bold transition-all">
+                Сменить Steam
               </button>
             </div>
           </div>
@@ -610,7 +496,7 @@
     </div>
   </main>
 
-  <!-- ==================== MATCH FOUND ACCEPT MODAL ==================== -->
+  <!-- ==================== MATCH FOUND MODAL ==================== -->
   <div id="match-accept-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-faceit-surface border-2 border-faceit-orange rounded-2xl max-w-md w-full p-6 sm:p-8 text-center shadow-2xl animate-pulse-orange">
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-faceit-orange/15 text-faceit-orange text-xs font-bold uppercase tracking-widest mb-3">
@@ -618,15 +504,14 @@
         Матч найден
       </div>
       <h2 class="font-display text-3xl font-bold text-white tracking-wide">МАТЧ ГОТОВ!</h2>
-      <p id="accept-modal-subtitle" class="text-sm text-zinc-400 mt-1">Режим 5 на 5 • Подтверди участие</p>
+      <p id="accept-modal-subtitle" class="text-sm text-zinc-400 mt-1">Подтверди участие</p>
 
-      <!-- Countdown Circle -->
       <div class="my-6 flex flex-col items-center">
         <div id="accept-countdown-text" class="font-display text-5xl font-bold text-faceit-orange">20</div>
         <div class="w-full h-2 bg-faceit-bg rounded-full overflow-hidden mt-3 border border-faceit-border">
           <div id="accept-countdown-bar" class="h-full bg-faceit-orange transition-all duration-1000" style="width: 100%;"></div>
         </div>
-        <div id="accept-ready-count" class="text-xs text-zinc-400 mt-3 font-semibold">Готово игроков: 9 / 10</div>
+        <div id="accept-ready-count" class="text-xs text-zinc-400 mt-3 font-semibold">Готово: 9 / 10</div>
       </div>
 
       <button id="btn-accept-match" onclick="acceptCurrentMatch()"
@@ -636,129 +521,149 @@
     </div>
   </div>
 
-  <!-- ==================== FIREBASE & APPLICATION SCRIPT ==================== -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import {
-      getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
-      onSnapshot, collection
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  <!-- ==================== MATCH RESULT / ELO ANIMATION MODAL ==================== -->
+  <div id="match-result-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-faceit-surface border border-faceit-border rounded-2xl max-w-md w-full p-6 sm:p-8 text-center shadow-2xl space-y-5">
+      <div id="result-status-pill" class="inline-block px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">ПОБЕДА</div>
+      <div>
+        <div id="result-score-text" class="font-display text-4xl font-bold text-white tracking-wider">13 : 9</div>
+        <div id="result-map-text" class="text-xs font-mono text-zinc-400 mt-1">de_mirage • 5v5</div>
+      </div>
 
+      <div class="py-4 bg-faceit-bg border border-faceit-border rounded-2xl flex flex-col items-center gap-2">
+        <div id="result-elo-delta" class="font-display text-5xl font-bold animate-elo-pop">+25 ELO</div>
+        <div class="flex items-center gap-2 mt-1">
+          <span id="result-new-badge"></span>
+          <span id="result-new-elo" class="text-sm font-mono text-zinc-300 font-semibold">Текущий рейтинг: 1025 ELO</span>
+        </div>
+      </div>
+
+      <button onclick="closeResultModal()" class="w-full py-3.5 rounded-xl bg-faceit-orange hover:bg-faceit-orangeHover text-white font-display font-bold text-base uppercase tracking-wider transition-all">
+        Вернуться в лобби
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== APPLICATION LOGIC ==================== -->
+  <script>
     // =========================================================================
-    // 1. CONSTANTS, FACEIT LEVELS, ELO BRACKETS, MAP POOLS & BOT TEMPLATES
+    // 1. DEFAULT FIREBASE CONFIG (AUTO-CONNECT)
     // =========================================================================
+    const DEFAULT_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBihb3KH1HAqcq-Ua09V3tSgahUmXotDkE",
+      authDomain: "faciet-feed5.firebaseapp.com",
+      projectId: "faciet-feed5",
+      storageBucket: "faciet-feed5.firebasestorage.app",
+      messagingSenderId: "546808676119",
+      appId: "1:546808676119:web:c0564db4cc8882d7280152"
+    };
+
+    // Exact FACEIT ELO Scale
     const ELO_BRACKETS = [
-      { level: 1, min: 100,  max: 800,  color: '#9E9E9E', name: 'Level 1' },
-      { level: 2, min: 801,  max: 950,  color: '#1CE400', name: 'Level 2' },
-      { level: 3, min: 951,  max: 1100, color: '#1CE400', name: 'Level 3' },
-      { level: 4, min: 1101, max: 1250, color: '#FFC800', name: 'Level 4' },
-      { level: 5, min: 1251, max: 1400, color: '#FFC800', name: 'Level 5' },
-      { level: 6, min: 1401, max: 1550, color: '#FFC800', name: 'Level 6' },
-      { level: 7, min: 1551, max: 1700, color: '#FFC800', name: 'Level 7' },
-      { level: 8, min: 1701, max: 1850, color: '#FF6309', name: 'Level 8' },
-      { level: 9, min: 1851, max: 2000, color: '#FF6309', name: 'Level 9' },
-      { level: 10, min: 2001, max: 9999, color: '#FE1F00', name: 'Level 10' }
+      { level: 1,  min: 100,  max: 500,  color: '#9E9E9E' },
+      { level: 2,  min: 501,  max: 750,  color: '#1CE400' },
+      { level: 3,  min: 751,  max: 900,  color: '#1CE400' },
+      { level: 4,  min: 901,  max: 1050, color: '#FFC800' },
+      { level: 5,  min: 1051, max: 1200, color: '#FFC800' },
+      { level: 6,  min: 1201, max: 1350, color: '#FFC800' },
+      { level: 7,  min: 1351, max: 1530, color: '#FFC800' },
+      { level: 8,  min: 1531, max: 1750, color: '#FF6309' },
+      { level: 9,  min: 1751, max: 2000, color: '#FF6309' },
+      { level: 10, min: 2001, max: 9999, color: '#FE1F00' }
     ];
 
     const MAP_POOLS = {
       '5v5': [
-        { id: 'de_mirage', name: 'Mirage', tag: 'de_mirage' },
-        { id: 'de_nuke', name: 'Nuke', tag: 'de_nuke' },
-        { id: 'de_dust2', name: 'Dust 2', tag: 'de_dust2' }
+        { id: 'de_mirage', name: 'Mirage' },
+        { id: 'de_nuke', name: 'Nuke' },
+        { id: 'de_dust2', name: 'Dust 2' }
       ],
       '1v1': [
-        { id: 'de_overpass', name: 'Overpass', tag: 'de_overpass' },
-        { id: 'de_nuke', name: 'Nuke', tag: 'de_nuke' },
-        { id: 'de_inferno', name: 'Inferno', tag: 'de_inferno' }
+        { id: 'de_overpass', name: 'Overpass' },
+        { id: 'de_nuke', name: 'Nuke' },
+        { id: 'de_inferno', name: 'Inferno' }
       ]
     };
 
-    const BOT_NAMES = [
-      'M0nesy_AI', 'Niko_Bot', 'ZywOo_CPU', 'Donk_AI', 's1mple_Bot',
-      'Ropz_AI', 'B1t_Bot', 'Device_AI', 'Sh1ro_Bot', 'Jimpphat_AI',
-      'Karrigan_Bot', 'Broky_AI', 'Twistzz_Bot', 'Spinx_AI', 'Frozen_Bot'
-    ];
+    const BOT_SUFFIXES = ['A', 'B', 'C', 'D', 'E'];
 
     // =========================================================================
-    // 2. APPLICATION STATE
+    // 2. STATE
     // =========================================================================
     let db = null;
-    let auth = null;
-    let appId = typeof __app_id !== 'undefined' ? __app_id : 'faceit-local-default';
     let fbConnected = false;
+    let unsubUsers = null;
+    let unsubQueue = null;
+    let unsubMatches = null;
 
-    let currentUser = null;        // Firebase Auth user
-    let currentProfile = null;     // User profile from Firestore
-    let allProfiles = [];          // Live leaderboard profiles
-    let allQueueEntries = [];      // Live queue entries
-    let allMatches = [];           // Live matches collection
+    let currentSteamId = localStorage.getItem('faceit_steamid') || null;
+    let currentProfile = null;
+    let allUsers = [];
+    let allQueue = [];
+    let allMatches = [];
 
     let selectedMode = '5v5';
     let activeTab = 'play';
     let isSearching = false;
     let queueSeconds = 0;
-    let queueAutoFillLeft = 15;
+    let queueAutoFillLeft = 12;
     let queueInterval = null;
 
     let activeMatchId = null;
     let activeMatchData = null;
+    let lastShownResultMatchId = null;
     let acceptTimerInterval = null;
     let acceptSecondsLeft = 20;
-    let botVetoTimeout = null;
     let playedAcceptSoundForMatch = null;
-    let lastShownBridgeResult = null;
+    let botVetoTimeout = null;
     let configExpanded = false;
 
-    let serverIp = '127.0.0.1:27015';
-    let steamOpenIdReturnUrl = '';
+    let serverIp = localStorage.getItem('faceit_server_ip') || '127.0.0.1:27015';
+    let steamOpenIdReturnUrl = localStorage.getItem('faceit_openid_url') || '';
 
     // =========================================================================
-    // 3. HELPER FUNCTIONS: ELO, LEVEL BADGES, BOT SKILL TIERS, AUDIO, TOASTS
+    // 3. HELPERS (ELO, BADGES, SOUND, TOAST, CLIPBOARD)
     // =========================================================================
     function getLevelFromElo(elo) {
-      const safeElo = Math.max(100, Number(elo) || 1000);
+      const val = Math.max(100, Number(elo) || 1000);
       for (const b of ELO_BRACKETS) {
-        if (safeElo >= b.min && safeElo <= b.max) return b.level;
+        if (val >= b.min && val <= b.max) return b.level;
       }
       return 10;
     }
 
     function getLevelColor(level) {
-      const found = ELO_BRACKETS.find(b => b.level === Number(level));
-      return found ? found.color : '#9E9E9E';
+      const b = ELO_BRACKETS.find(x => x.level === Number(level));
+      return b ? b.color : '#9E9E9E';
     }
 
-    function getBotSkillTier(level) {
-      const lvl = Number(level) || 3;
-      if (lvl <= 2) return { label: 'Easy', cs2Difficulty: 0, skill: 0, reaction: 0.45, aim: 'low' };
-      if (lvl <= 5) return { label: 'Normal', cs2Difficulty: 1, skill: 1, reaction: 0.30, aim: 'medium' };
-      if (lvl <= 8) return { label: 'Hard', cs2Difficulty: 2, skill: 2, reaction: 0.18, aim: 'high' };
-      return { label: 'Expert', cs2Difficulty: 3, skill: 3, reaction: 0.09, aim: 'pro_hs' };
+    function calculateEloDelta(teamElo, enemyElo, won) {
+      const expected = 1 / (1 + Math.pow(10, (enemyElo - teamElo) / 400));
+      const k = 50; // Gives +25 / -25 for equal teams
+      if (won) {
+        return Math.max(10, Math.min(45, Math.round(k * (1 - expected))));
+      } else {
+        return Math.min(-10, Math.max(-45, -Math.round(k * expected)));
+      }
     }
 
-    /**
-     * Renders a crisp FACEIT-style circular SVG Level Badge (1-10)
-     */
     function renderLevelBadge(level, size = 'md') {
       const lvl = Math.min(10, Math.max(1, Number(level) || 1));
       const color = getLevelColor(lvl);
-      const dims = size === 'sm' ? 24 : size === 'lg' ? 52 : 30;
+      const dims = size === 'sm' ? 24 : size === 'lg' ? 54 : 30;
       const fontSize = size === 'sm' ? 11 : size === 'lg' ? 22 : 13;
       const strokeW = size === 'lg' ? 4 : 3;
       const r = 16;
-      const circumference = 2 * Math.PI * r;
-      const progress = (lvl / 10) * (circumference * 0.78);
-      const glowClass = lvl === 10 ? 'lvl10-glow' : '';
+      const c = 2 * Math.PI * r;
+      const dash = (lvl / 10) * (c * 0.78);
+      const glow = lvl === 10 ? 'lvl10-glow' : '';
 
       return `
-        <span class="inline-flex items-center justify-center shrink-0 ${glowClass}" title="FACEIT Уровень ${lvl}">
+        <span class="inline-flex items-center justify-center shrink-0 ${glow}" title="FACEIT Уровень ${lvl}">
           <svg width="${dims}" height="${dims}" viewBox="0 0 40 40">
-            <circle cx="20" cy="20" r="${r}" fill="#18181b" stroke="#2c2c34" stroke-width="${strokeW}" />
+            <circle cx="20" cy="20" r="${r}" fill="#161920" stroke="#2a2f3d" stroke-width="${strokeW}" />
             <circle cx="20" cy="20" r="${r}" fill="none" stroke="${color}" stroke-width="${strokeW}"
-              stroke-dasharray="${progress} ${circumference}"
-              stroke-linecap="round"
-              transform="rotate(130 20 20)" />
+              stroke-dasharray="${dash} ${c}" stroke-linecap="round" transform="rotate(130 20 20)" />
             <text x="20" y="21" text-anchor="middle" dominant-baseline="central"
               fill="${color}" font-family="Chakra Petch, Inter, sans-serif" font-weight="700" font-size="${fontSize}">
               ${lvl}
@@ -768,56 +673,48 @@
       `;
     }
 
-    /**
-     * Web Audio API FACEIT-style Match Ready Sound (no external MP3 required)
-     */
     function playMatchFoundSound() {
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (!AudioCtx) return;
         const ctx = new AudioCtx();
-        const notes = [523.25, 659.25, 783.99, 1046.5];
-        notes.forEach((freq, idx) => {
+        [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = 'triangle';
-          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.11);
-          gain.gain.setValueAtTime(0.001, ctx.currentTime + idx * 0.11);
-          gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + idx * 0.11 + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.11 + 0.35);
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.11);
+          gain.gain.setValueAtTime(0.001, ctx.currentTime + i * 0.11);
+          gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + i * 0.11 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.11 + 0.35);
           osc.connect(gain);
           gain.connect(ctx.destination);
-          osc.start(ctx.currentTime + idx * 0.11);
-          osc.stop(ctx.currentTime + idx * 0.11 + 0.36);
+          osc.start(ctx.currentTime + i * 0.11);
+          osc.stop(ctx.currentTime + i * 0.11 + 0.36);
         });
-      } catch (e) {
-        console.warn('Audio playback skipped:', e);
-      }
-    }
-
-    function showToast(message, type = 'info') {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      const borderCol = type === 'success' ? 'border-emerald-500/50 text-emerald-300'
-        : type === 'error' ? 'border-red-500/50 text-red-300'
-        : 'border-faceit-orange/50 text-zinc-100';
-
-      toast.className = `pointer-events-auto bg-faceit-surface/95 backdrop-blur border ${borderCol} rounded-xl px-4 py-3 text-sm font-medium shadow-xl flex items-center gap-2.5 transition-all duration-300`;
-      toast.innerHTML = `<span class="w-2 h-2 rounded-full ${type === 'success' ? 'bg-emerald-400' : type === 'error' ? 'bg-red-400' : 'bg-faceit-orange'} shrink-0"></span><span>${escapeHtml(message)}</span>`;
-      container.appendChild(toast);
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(20px)';
-        setTimeout(() => toast.remove(), 300);
-      }, 3400);
+      } catch (e) {}
     }
 
     function escapeHtml(str) {
       return String(str || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const el = document.createElement('div');
+      const cls = type === 'success' ? 'border-emerald-500/50 text-emerald-300'
+        : type === 'error' ? 'border-red-500/50 text-red-300'
+        : 'border-faceit-orange/50 text-zinc-100';
+      const dot = type === 'success' ? 'bg-emerald-400' : type === 'error' ? 'bg-red-400' : 'bg-faceit-orange';
+      el.className = `pointer-events-auto bg-faceit-surface/95 backdrop-blur border ${cls} rounded-xl px-4 py-3 text-sm font-medium shadow-xl flex items-center gap-2.5 transition-all duration-300`;
+      el.innerHTML = `<span class="w-2 h-2 rounded-full ${dot} shrink-0"></span><span>${escapeHtml(message)}</span>`;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateX(20px)';
+        setTimeout(() => el.remove(), 300);
+      }, 3400);
     }
 
     function copyTextToClipboard(text) {
@@ -832,191 +729,176 @@
         document.body.removeChild(ta);
         showToast('Скопировано в буфер обмена!', 'success');
       } catch (e) {
-        showToast('Не удалось скопировать текст', 'error');
+        showToast('Не удалось скопировать', 'error');
       }
     }
 
-    // Helper for strict Firestore public collection paths (RULE 1)
-    function publicCol(colName) {
-      return collection(db, 'artifacts', appId, 'public', 'data', colName);
-    }
-    function publicDoc(colName, docId) {
-      return doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
+    // =========================================================================
+    // 4. FIREBASE INITIALIZATION (COMPAT SDK v10)
+    // =========================================================================
+    function getActiveFirebaseConfig() {
+      const saved = localStorage.getItem('faceit_fb_config');
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) {}
+      }
+      return DEFAULT_FIREBASE_CONFIG;
     }
 
-    // =========================================================================
-    // 4. FIREBASE INITIALIZATION & AUTHENTICATION (RULE 3)
-    // =========================================================================
-    async function initFirebase() {
+    function initFirebase(configObj) {
       try {
-        if (typeof __firebase_config === 'undefined' || !__firebase_config) {
-          throw new Error('Firebase config not provided in environment');
-        }
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-        auth = getAuth(app);
+        if (unsubUsers) unsubUsers();
+        if (unsubQueue) unsubQueue();
+        if (unsubMatches) unsubMatches();
 
-        // Authenticate FIRST before any Firestore queries (RULE 3)
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          const cred = await signInWithCustomToken(auth, __initial_auth_token);
-          currentUser = cred.user;
+        if (firebase.apps.length > 0) {
+          firebase.app().delete().then(() => startFirebaseApp(configObj)).catch(() => startFirebaseApp(configObj));
         } else {
-          const cred = await signInAnonymously(auth);
-          currentUser = cred.user;
+          startFirebaseApp(configObj);
         }
+      } catch (err) {
+        setFirebaseStatus(false, err.message);
+      }
+    }
 
+    function startFirebaseApp(configObj) {
+      try {
+        firebase.initializeApp(configObj);
+        db = firebase.firestore();
         fbConnected = true;
-        document.getElementById('settings-user-uid').textContent = currentUser.uid;
+        setFirebaseStatus(true);
+        document.getElementById('setting-fb-config').value = JSON.stringify(configObj, null, 2);
 
-        // Check if returning from Steam OpenID redirect
-        await checkSteamOpenIdReturn();
-
-        // Load user profile if exists
-        await loadCurrentUserProfile();
-
-        // Subscribe to real-time collections
-        subscribeToFirestore();
+        subscribeFirestore();
+        checkSteamOpenIdReturn();
       } catch (err) {
         console.error('Firebase init error:', err);
-        fbConnected = false;
-        document.getElementById('settings-fb-status').innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400"></span> Оффлайн / Локальный режим`;
-        document.getElementById('settings-fb-status').className = 'flex items-center gap-2 font-semibold text-amber-400';
-        showToast('Ошибка подключения к Firebase. Проверьте конфигурацию.', 'error');
-      } finally {
-        document.getElementById('loading-screen').classList.add('hidden');
-        renderLegendBadges();
-        updateAuthUI();
+        setFirebaseStatus(false, err.message);
       }
     }
 
-    async function loadCurrentUserProfile() {
-      if (!currentUser || !db) return;
-      try {
-        const snap = await getDoc(publicDoc('profiles', currentUser.uid));
-        if (snap.exists()) {
-          currentProfile = snap.data();
-          if (currentProfile.serverIp) {
-            serverIp = currentProfile.serverIp;
-            document.getElementById('setting-server-ip').value = serverIp;
-          }
-          if (currentProfile.steamOpenIdReturnUrl) {
-            steamOpenIdReturnUrl = currentProfile.steamOpenIdReturnUrl;
-            document.getElementById('setting-openid-url').value = steamOpenIdReturnUrl;
-          }
+    function setFirebaseStatus(ok, errMsg = '') {
+      const headerEl = document.getElementById('header-fb-status');
+      const badgeEl = document.getElementById('settings-fb-badge');
+      if (ok) {
+        headerEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span> Firebase подключен • NO-VAC`;
+        headerEl.className = 'text-[10px] uppercase tracking-wider text-emerald-400/90 font-semibold mt-0.5 flex items-center gap-1.5';
+        if (badgeEl) {
+          badgeEl.textContent = 'Firebase подключен';
+          badgeEl.className = 'px-3 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-bold';
         }
-      } catch (err) {
-        console.error('Error loading profile:', err);
+      } else {
+        headerEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span> Ошибка Firebase`;
+        headerEl.className = 'text-[10px] uppercase tracking-wider text-red-400 font-semibold mt-0.5 flex items-center gap-1.5';
+        if (badgeEl) {
+          badgeEl.textContent = 'Ошибка подключения';
+          badgeEl.className = 'px-3 py-1 rounded-lg bg-red-500/15 text-red-400 border border-red-500/30 text-xs font-bold';
+        }
+        if (errMsg) showToast('Ошибка Firebase: ' + errMsg, 'error');
       }
     }
 
-    function subscribeToFirestore() {
-      if (!currentUser || !db) return;
+    function subscribeFirestore() {
+      if (!db) return;
 
-      // 1. Subscribe to all user profiles (for Leaderboard & live profile updates)
-      onSnapshot(publicCol('profiles'), (snapshot) => {
-        allProfiles = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        const myDoc = allProfiles.find(p => p.id === currentUser.uid);
-        if (myDoc) {
-          currentProfile = myDoc;
-          updateAuthUI();
-          renderProfileTab();
+      // 1. Users (Leaderboard + Current Profile)
+      unsubUsers = db.collection('users').onSnapshot((snap) => {
+        allUsers = snap.docs.map(d => ({ steamid: d.id, ...d.data() }));
+        if (currentSteamId) {
+          const found = allUsers.find(u => String(u.steamid) === String(currentSteamId));
+          if (found) {
+            currentProfile = found;
+            updateAuthUI();
+            renderProfileTab();
+          }
         }
         renderLeaderboard();
       }, (err) => {
-        console.error('Profiles snapshot error:', err);
+        console.error('Users snapshot error:', err);
+        setFirebaseStatus(false, 'Нет доступа к Firestore (проверь Правила)');
       });
 
-      // 2. Subscribe to Matchmaking Queue
-      onSnapshot(publicCol('queue'), (snapshot) => {
-        allQueueEntries = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      // 2. Queue
+      unsubQueue = db.collection('queue').onSnapshot((snap) => {
+        allQueue = snap.docs.map(d => ({ steamid: d.id, ...d.data() }));
         handleQueueUpdates();
-      }, (err) => {
-        console.error('Queue snapshot error:', err);
       });
 
-      // 3. Subscribe to Matches
-      onSnapshot(publicCol('matches'), (snapshot) => {
-        allMatches = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      // 3. Matches
+      unsubMatches = db.collection('matches').onSnapshot((snap) => {
+        allMatches = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         handleMatchesUpdates();
         renderProfileTab();
-      }, (err) => {
-        console.error('Matches snapshot error:', err);
       });
     }
 
     // =========================================================================
-    // 5. STEAM LOGIN (OpenID 2.0 + Quick SteamID64)
+    // 5. STEAM LOGIN & PROFILE SYNC (`users/{steamid}`)
     // =========================================================================
     async function checkSteamOpenIdReturn() {
       const params = new URLSearchParams(window.location.search);
-      const claimedId = params.get('openid.claimed_id');
-      if (claimedId && claimedId.includes('steamcommunity.com/openid/id/')) {
-        const steamId64 = claimedId.split('/').pop();
-        if (/^\d{17}$/.test(steamId64)) {
-          await saveUserProfile({
-            nickname: `Steam_${steamId64.slice(-4)}`,
-            steamId64
-          });
-          // Clean query string
+      const claimed = params.get('openid.claimed_id');
+      if (claimed && claimed.includes('steamcommunity.com/openid/id/')) {
+        const steamid = claimed.split('/').pop();
+        if (/^\d{17}$/.test(steamid)) {
+          await loginAndSyncUser(steamid, `Steam_${steamid.slice(-4)}`);
           window.history.replaceState({}, document.title, window.location.pathname);
-          showToast(`Успешный вход через Steam (${steamId64})!`, 'success');
+          showToast(`Успешный вход через Steam (${steamid})!`, 'success');
         }
       }
     }
 
     function loginWithSteamOpenID() {
       const returnTo = steamOpenIdReturnUrl.trim() || window.location.href.split('?')[0];
-      const realm = window.location.origin;
-      const openIdUrl = new URL('https://steamcommunity.com/openid/login');
-      openIdUrl.searchParams.set('openid.ns', 'http://specs.openid.net/auth/2.0');
-      openIdUrl.searchParams.set('openid.mode', 'checkid_setup');
-      openIdUrl.searchParams.set('openid.return_to', returnTo);
-      openIdUrl.searchParams.set('openid.realm', realm);
-      openIdUrl.searchParams.set('openid.identity', 'http://specs.openid.net/auth/2.0/identifier_select');
-      openIdUrl.searchParams.set('openid.claimed_id', 'http://specs.openid.net/auth/2.0/identifier_select');
-
-      showToast('Перенаправление на главную страницу Steam OpenID...', 'info');
-      window.open(openIdUrl.toString(), '_blank');
+      const url = new URL('https://steamcommunity.com/openid/login');
+      url.searchParams.set('openid.ns', 'http://specs.openid.net/auth/2.0');
+      url.searchParams.set('openid.mode', 'checkid_setup');
+      url.searchParams.set('openid.return_to', returnTo);
+      url.searchParams.set('openid.realm', window.location.origin);
+      url.searchParams.set('openid.identity', 'http://specs.openid.net/auth/2.0/identifier_select');
+      url.searchParams.set('openid.claimed_id', 'http://specs.openid.net/auth/2.0/identifier_select');
+      window.location.href = url.toString();
     }
 
     function generateRandomSteamId() {
-      const suffix = Math.floor(100000000 + Math.random() * 899999999).toString();
-      document.getElementById('login-steamid').value = '76561198' + suffix;
+      const rnd = Math.floor(100000000 + Math.random() * 899999999);
+      document.getElementById('login-steamid').value = '76561198' + rnd;
     }
 
     async function handleQuickSteamLogin(e) {
       e.preventDefault();
-      const nickname = document.getElementById('login-nickname').value.trim();
-      const steamId64 = document.getElementById('login-steamid').value.trim();
-      if (!nickname || !/^\d{17}$/.test(steamId64)) {
-        showToast('Введите корректный никнейм и 17-значный SteamID64', 'error');
+      const nick = document.getElementById('login-nickname').value.trim();
+      const steamid = document.getElementById('login-steamid').value.trim();
+      if (!nick || !/^\d{17}$/.test(steamid)) {
+        showToast('Введи ник и 17-значный SteamID64', 'error');
         return;
       }
-      await saveUserProfile({ nickname, steamId64 });
-      showToast(`Добро пожаловать, ${nickname}!`, 'success');
+      await loginAndSyncUser(steamid, nick);
+      showToast(`Добро пожаловать, ${nick}!`, 'success');
     }
 
-    async function saveUserProfile({ nickname, steamId64 }) {
-      const profileData = {
-        uid: currentUser ? currentUser.uid : 'local-user',
-        nickname,
-        steamId64,
-        elo: 1000,
-        level: getLevelFromElo(1000),
-        wins: 0,
-        losses: 0,
-        serverIp,
-        steamOpenIdReturnUrl,
-        updatedAt: Date.now()
-      };
+    async function loginAndSyncUser(steamid, nickname) {
+      currentSteamId = String(steamid);
+      localStorage.setItem('faceit_steamid', currentSteamId);
 
-      currentProfile = profileData;
-      if (currentUser && db) {
-        try {
-          await setDoc(publicDoc('profiles', currentUser.uid), profileData, { merge: true });
-        } catch (err) {
-          console.error('Failed to save profile:', err);
+      if (db) {
+        const ref = db.collection('users').doc(currentSteamId);
+        const doc = await ref.get();
+        if (doc.exists) {
+          const existing = doc.data();
+          await ref.set({ nickname, updatedAt: Date.now() }, { merge: true });
+          currentProfile = { steamid: currentSteamId, ...existing, nickname };
+        } else {
+          const fresh = {
+            steamid: currentSteamId,
+            nickname,
+            elo: 1000,
+            level: getLevelFromElo(1000),
+            wins: 0,
+            losses: 0,
+            updatedAt: Date.now()
+          };
+          await ref.set(fresh);
+          currentProfile = fresh;
         }
       }
       updateAuthUI();
@@ -1025,18 +907,13 @@
 
     async function logoutSteamProfile() {
       if (isSearching) await cancelQueue();
-      if (currentUser && db) {
-        try {
-          await deleteDoc(publicDoc('profiles', currentUser.uid));
-        } catch (e) {
-          console.error(e);
-        }
-      }
+      localStorage.removeItem('faceit_steamid');
+      currentSteamId = null;
       currentProfile = null;
       activeMatchId = null;
       activeMatchData = null;
       updateAuthUI();
-      showToast('Вы вышли из Steam-профиля', 'info');
+      showToast('Вы вышли из Steam-аккаунта', 'info');
     }
 
     function updateAuthUI() {
@@ -1044,22 +921,19 @@
       const loginView = document.getElementById('steam-login-view');
       const appContent = document.getElementById('app-content');
 
-      if (!currentProfile) {
+      if (!currentSteamId || !currentProfile) {
         loginView.classList.remove('hidden');
         appContent.classList.add('hidden');
         headerArea.innerHTML = `
-          <button onclick="loginWithSteamOpenID()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1b2838] hover:bg-[#2a475e] border border-sky-400/30 text-white text-xs sm:text-sm font-semibold transition-all">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0z"/>
-            </svg>
+          <button onclick="loginWithSteamOpenID()" class="px-4 py-2 rounded-xl bg-[#1b2838] hover:bg-[#2a475e] border border-sky-400/30 text-white text-xs sm:text-sm font-semibold transition-all">
             Войти через Steam
           </button>
         `;
       } else {
         loginView.classList.add('hidden');
         appContent.classList.remove('hidden');
-
         const lvl = getLevelFromElo(currentProfile.elo);
+
         headerArea.innerHTML = `
           <div onclick="switchTab('profile')" class="cursor-pointer flex items-center gap-2.5 bg-faceit-bg hover:bg-faceit-card border border-faceit-border rounded-xl px-3 py-1.5 transition-all">
             ${renderLevelBadge(lvl, 'md')}
@@ -1070,43 +944,32 @@
           </div>
         `;
 
-        // Update Lobby hero card
         document.getElementById('lobby-user-badge').innerHTML = renderLevelBadge(lvl, 'lg');
         document.getElementById('lobby-user-name').textContent = currentProfile.nickname;
         document.getElementById('lobby-user-elo').textContent = `${currentProfile.elo} ELO`;
       }
-
       updateNavButtons();
     }
 
-    function renderLegendBadges() {
-      document.getElementById('legend-lvl-1').innerHTML = renderLevelBadge(1, 'md');
-      document.getElementById('legend-lvl-4').innerHTML = renderLevelBadge(4, 'md');
-      document.getElementById('legend-lvl-8').innerHTML = renderLevelBadge(8, 'md');
-      document.getElementById('legend-lvl-10').innerHTML = renderLevelBadge(10, 'md');
-    }
-
     // =========================================================================
-    // 6. NAVIGATION & MODE SELECTION
+    // 6. TABS & MODE SELECTION
     // =========================================================================
     function switchTab(tab) {
       activeTab = tab;
-      document.querySelectorAll('.tab-panel').forEach(el => el.classList.add('hidden'));
-      const target = document.getElementById(`tab-${tab}`);
-      if (target) target.classList.remove('hidden');
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      const el = document.getElementById(`tab-${tab}`);
+      if (el) el.classList.remove('hidden');
       updateNavButtons();
     }
 
     function updateNavButtons() {
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        const isAct = btn.dataset.tab === activeTab;
-        btn.className = isAct
+      document.querySelectorAll('.nav-btn').forEach(b => {
+        b.className = b.dataset.tab === activeTab
           ? 'nav-btn px-4 py-2 rounded-lg text-sm font-bold bg-faceit-orange text-white shadow transition-all'
           : 'nav-btn px-4 py-2 rounded-lg text-sm font-semibold text-zinc-400 hover:text-white transition-all';
       });
-      document.querySelectorAll('.nav-btn-mobile').forEach(btn => {
-        const isAct = btn.dataset.tab === activeTab;
-        btn.className = isAct
+      document.querySelectorAll('.nav-btn-mobile').forEach(b => {
+        b.className = b.dataset.tab === activeTab
           ? 'nav-btn-mobile flex-1 py-2 rounded-lg text-xs font-bold text-center bg-faceit-orange text-white transition-all'
           : 'nav-btn-mobile flex-1 py-2 rounded-lg text-xs font-semibold text-center text-zinc-400 transition-all';
       });
@@ -1114,63 +977,53 @@
 
     function selectMode(mode) {
       if (isSearching) {
-        showToast('Сначала отмени текущий поиск матча', 'info');
+        showToast('Сначала отмени поиск', 'info');
         return;
       }
       selectedMode = mode;
-      const card5 = document.getElementById('mode-card-5v5');
-      const card1 = document.getElementById('mode-card-1v1');
+      const c5 = document.getElementById('mode-card-5v5');
+      const c1 = document.getElementById('mode-card-1v1');
       if (mode === '5v5') {
-        card5.classList.replace('border-faceit-border', 'border-faceit-orange');
-        card1.classList.replace('border-emerald-500', 'border-faceit-border');
-        card1.classList.replace('border-faceit-orange', 'border-faceit-border');
+        c5.classList.replace('border-faceit-border', 'border-faceit-orange');
+        c1.classList.replace('border-emerald-500', 'border-faceit-border');
         document.getElementById('selected-mode-label').textContent = '5 на 5 — Соревновательный (Mirage / Nuke / Dust 2)';
       } else {
-        card5.classList.replace('border-faceit-orange', 'border-faceit-border');
-        card1.classList.replace('border-faceit-border', 'border-emerald-500');
+        c5.classList.replace('border-faceit-orange', 'border-faceit-border');
+        c1.classList.replace('border-faceit-border', 'border-emerald-500');
         document.getElementById('selected-mode-label').textContent = '1 на 1 — Дуэль (Overpass / Nuke / Inferno)';
       }
     }
 
     // =========================================================================
-    // 7. REAL-TIME MATCHMAKING QUEUE & SKILL-SCALED BOT GENERATION
+    // 7. LIVE QUEUE & BOT GENERATION (`Bot_Lvl{N}_A`..`E`)
     // =========================================================================
     async function startQueue() {
-      if (!currentProfile || !currentUser || !db) return;
-
+      if (!db || !currentProfile) return;
       isSearching = true;
       queueSeconds = 0;
-      queueAutoFillLeft = 15;
+      queueAutoFillLeft = 12;
 
       document.getElementById('queue-idle-panel').classList.add('hidden');
       document.getElementById('queue-searching-panel').classList.remove('hidden');
 
-      // Add self to Firestore queue
-      try {
-        await setDoc(publicDoc('queue', currentUser.uid), {
-          uid: currentUser.uid,
-          nickname: currentProfile.nickname,
-          steamId64: currentProfile.steamId64,
-          elo: currentProfile.elo,
-          level: getLevelFromElo(currentProfile.elo),
-          mode: selectedMode,
-          joinedAt: Date.now()
-        });
-      } catch (err) {
-        console.error('Error joining queue:', err);
-      }
+      await db.collection('queue').doc(currentSteamId).set({
+        steamid: currentSteamId,
+        nickname: currentProfile.nickname,
+        elo: Number(currentProfile.elo) || 1000,
+        level: getLevelFromElo(currentProfile.elo),
+        mode: selectedMode,
+        joinedAt: Date.now()
+      });
 
       clearInterval(queueInterval);
       queueInterval = setInterval(() => {
         queueSeconds++;
         queueAutoFillLeft = Math.max(0, queueAutoFillLeft - 1);
-
-        const mins = String(Math.floor(queueSeconds / 60)).padStart(2, '0');
-        const secs = String(queueSeconds % 60).padStart(2, '0');
-        document.getElementById('queue-timer').textContent = `${mins}:${secs}`;
+        const m = String(Math.floor(queueSeconds / 60)).padStart(2, '0');
+        const s = String(queueSeconds % 60).padStart(2, '0');
+        document.getElementById('queue-timer').textContent = `${m}:${s}`;
         document.getElementById('queue-autofill-countdown').textContent = queueAutoFillLeft;
 
-        // Auto-start with bots when countdown hits 0
         if (queueAutoFillLeft === 0 && isSearching) {
           forceStartWithBots();
         }
@@ -1182,34 +1035,25 @@
       clearInterval(queueInterval);
       document.getElementById('queue-idle-panel').classList.remove('hidden');
       document.getElementById('queue-searching-panel').classList.add('hidden');
-
-      if (currentUser && db) {
-        try {
-          await deleteDoc(publicDoc('queue', currentUser.uid));
-        } catch (err) {
-          console.error('Error leaving queue:', err);
-        }
+      if (db && currentSteamId) {
+        await db.collection('queue').doc(currentSteamId).delete().catch(() => {});
       }
     }
 
     function handleQueueUpdates() {
-      // Filter stale queue entries older than 10 minutes
       const now = Date.now();
-      const freshQueue = allQueueEntries.filter(q => (now - (q.joinedAt || now)) < 600000);
+      const fresh = allQueue.filter(q => (now - (q.joinedAt || now)) < 600000);
+      const q5 = fresh.filter(q => q.mode === '5v5');
+      const q1 = fresh.filter(q => q.mode === '1v1');
 
-      const q5v5 = freshQueue.filter(q => q.mode === '5v5');
-      const q1v1 = freshQueue.filter(q => q.mode === '1v1');
-
-      document.getElementById('live-queue-5v5').textContent = q5v5.length;
-      document.getElementById('live-queue-1v1').textContent = q1v1.length;
+      document.getElementById('live-queue-5v5').textContent = q5.length;
+      document.getElementById('live-queue-1v1').textContent = q1.length;
 
       if (!isSearching) return;
+      const myQ = selectedMode === '5v5' ? q5 : q1;
+      document.getElementById('queue-real-count').textContent = myQ.length;
 
-      const myModeQueue = selectedMode === '5v5' ? q5v5 : q1v1;
-      document.getElementById('queue-real-count').textContent = myModeQueue.length;
-
-      const listEl = document.getElementById('queue-players-list');
-      listEl.innerHTML = myModeQueue.map(p => `
+      document.getElementById('queue-players-list').innerHTML = myQ.map(p => `
         <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-faceit-surface border border-faceit-border">
           ${renderLevelBadge(p.level, 'sm')}
           <span class="text-xs font-semibold text-white">${escapeHtml(p.nickname)}</span>
@@ -1217,33 +1061,30 @@
         </div>
       `).join('');
 
-      // Instant match if 1v1 has 2 real players or 5v5 has 10 real players
       const needed = selectedMode === '1v1' ? 2 : 10;
-      if (myModeQueue.length >= needed) {
-        // Earliest player creates the match to avoid race conditions
-        const sorted = [...myModeQueue].sort((a, b) => a.joinedAt - b.joinedAt);
-        if (sorted[0].uid === currentUser.uid) {
+      if (myQ.length >= needed) {
+        const sorted = [...myQ].sort((a, b) => a.joinedAt - b.joinedAt);
+        if (sorted[0].steamid === currentSteamId) {
           createMatchFromQueue(sorted.slice(0, needed), selectedMode);
         }
       }
     }
 
     async function forceStartWithBots() {
-      if (!isSearching || !currentUser || !db) return;
+      if (!isSearching || !db) return;
       const now = Date.now();
-      const myModeQueue = allQueueEntries
+      const myQ = allQueue
         .filter(q => q.mode === selectedMode && (now - (q.joinedAt || now)) < 600000)
         .sort((a, b) => a.joinedAt - b.joinedAt);
 
-      const playersToInclude = myModeQueue.length > 0 ? myModeQueue : [{
-        uid: currentUser.uid,
+      const players = myQ.length > 0 ? myQ : [{
+        steamid: currentSteamId,
         nickname: currentProfile.nickname,
-        steamId64: currentProfile.steamId64,
-        elo: currentProfile.elo,
+        elo: Number(currentProfile.elo) || 1000,
         level: getLevelFromElo(currentProfile.elo)
       }];
 
-      await createMatchFromQueue(playersToInclude, selectedMode);
+      await createMatchFromQueue(players, selectedMode);
     }
 
     async function createMatchFromQueue(realPlayers, mode) {
@@ -1253,139 +1094,104 @@
       document.getElementById('queue-searching-panel').classList.add('hidden');
 
       const teamSize = mode === '1v1' ? 1 : 5;
-      const totalSlots = teamSize * 2;
+      const avgElo = Math.round(realPlayers.reduce((s, p) => s + (Number(p.elo) || 1000), 0) / realPlayers.length);
 
-      // Average ELO of real players to scale bots around it
-      const avgElo = Math.round(
-        realPlayers.reduce((sum, p) => sum + (Number(p.elo) || 1000), 0) / realPlayers.length
-      );
+      const team_ct = [];
+      const team_t = [];
+      const shuffled = [...realPlayers].sort(() => Math.random() - 0.5);
 
-      // Randomly assign real players to Team A or Team B (so players can be teammates OR opponents in 5v5, and opponents in 1v1)
-      const teamA = [];
-      const teamB = [];
-
-      const shuffledReal = [...realPlayers].sort(() => Math.random() - 0.5);
-      shuffledReal.forEach((p, idx) => {
-        const playerObj = {
-          uid: p.uid,
+      shuffled.forEach(p => {
+        const obj = {
+          steamid: String(p.steamid),
           nickname: p.nickname,
-          steamId64: p.steamId64,
           elo: Number(p.elo) || 1000,
           level: getLevelFromElo(p.elo),
           isBot: false
         };
         if (mode === '1v1') {
-          if (teamA.length === 0) teamA.push(playerObj);
-          else if (teamB.length === 0) teamB.push(playerObj);
+          if (team_ct.length === 0) team_ct.push(obj);
+          else if (team_t.length === 0) team_t.push(obj);
         } else {
-          // Randomize teammate vs opponent placement while respecting team capacity
-          const preferA = Math.random() < 0.5;
-          if ((preferA && teamA.length < teamSize) || teamB.length >= teamSize) {
-            teamA.push(playerObj);
-          } else {
-            teamB.push(playerObj);
-          }
+          const goCT = Math.random() < 0.5;
+          if ((goCT && team_ct.length < teamSize) || team_t.length >= teamSize) team_ct.push(obj);
+          else team_t.push(obj);
         }
       });
 
-      // Fill empty slots with Skill-Scaled Bots
-      const usedBotNames = new Set();
-      function createBot(index) {
-        let name = BOT_NAMES[index % BOT_NAMES.length];
-        while (usedBotNames.has(name)) {
-          name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)] + '_' + Math.floor(Math.random() * 99);
-        }
-        usedBotNames.add(name);
-
-        // Scale bot ELO around lobby average (±180 ELO)
-        const botElo = Math.max(200, Math.min(2800, avgElo + Math.floor(Math.random() * 360 - 180)));
+      // Fill remaining slots with Bot_Lvl{N}_A..E
+      const lvlCounts = {};
+      function makeBot() {
+        const botElo = Math.max(150, Math.min(2600, avgElo + Math.floor(Math.random() * 260 - 130)));
         const botLvl = getLevelFromElo(botElo);
-        const tier = getBotSkillTier(botLvl);
-
+        const idx = lvlCounts[botLvl] || 0;
+        lvlCounts[botLvl] = idx + 1;
+        const suffix = BOT_SUFFIXES[idx % BOT_SUFFIXES.length];
+        const botName = `Bot_Lvl${botLvl}_${suffix}`;
         return {
-          uid: `bot_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-          nickname: `[BOT] ${name}`,
-          steamId64: 'BOT',
+          steamid: `BOT_${botName}_${Math.random().toString(36).slice(2, 5)}`,
+          nickname: botName,
           elo: botElo,
           level: botLvl,
-          isBot: true,
-          botSkill: tier
+          isBot: true
         };
       }
 
-      let botCounter = 0;
-      while (teamA.length < teamSize) teamA.push(createBot(botCounter++));
-      while (teamB.length < teamSize) teamB.push(createBot(botCounter++));
+      while (team_ct.length < teamSize) team_ct.push(makeBot());
+      while (team_t.length < teamSize) team_t.push(makeBot());
 
-      // Remove included real players from queue
+      const bots_ct = team_ct.filter(p => p.isBot).map(p => p.nickname);
+      const bots_t = team_t.filter(p => p.isBot).map(p => p.nickname);
+
       for (const rp of realPlayers) {
-        try {
-          await deleteDoc(publicDoc('queue', rp.uid));
-        } catch (e) { /* ignore */ }
+        await db.collection('queue').doc(String(rp.steamid)).delete().catch(() => {});
       }
 
-      // Create Match Room in Firestore
       const matchId = `match_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-      const realUids = realPlayers.map(p => p.uid);
-
-      const matchDoc = {
+      await db.collection('matches').doc(matchId).set({
         id: matchId,
         mode,
-        status: 'accept', // accept -> veto -> live -> finished
-        teamA,
-        teamB,
-        realUids,
-        acceptedUids: [],
+        status: 'accept', // accept -> veto -> ready (bridge.py) -> live -> finished
+        map: null,
         maps: MAP_POOLS[mode].map(m => m.id),
         bannedMaps: [],
-        selectedMap: null,
-        vetoTurn: 'A', // Team A captain bans first
+        vetoTurn: 'CT',
+        team_ct,
+        team_t,
+        bots_ct,
+        bots_t,
+        realSteamIds: realPlayers.map(p => String(p.steamid)),
+        acceptedSteamIds: [],
         serverIp,
-        createdAt: Date.now(),
         winner: null,
-        eloDelta: null
-      };
-
-      try {
-        await setDoc(publicDoc('matches', matchId), matchDoc);
-      } catch (err) {
-        console.error('Error creating match:', err);
-        showToast('Не удалось создать комнату матча', 'error');
-      }
+        score: null,
+        elo_changes: null,
+        createdAt: Date.now()
+      });
     }
 
     // =========================================================================
-    // 8. MATCH LIFECYCLE: ACCEPT -> MAP VETO -> LIVE ROOM -> FINISH
+    // 8. MATCH LIFECYCLE & REAL-TIME SYNC WITH `bridge.py`
     // =========================================================================
     function handleMatchesUpdates() {
-      if (!currentUser) return;
+      if (!currentSteamId) return;
 
-      // ELO-результат, записанный Python-мостом после GSI gameover
-      const bridgeResult = allMatches.find(m =>
-        m.status === 'finished' && m.elo_changes && m.id !== lastShownBridgeResult &&
-        Array.isArray(m.realUids) && m.realUids.includes(currentUser.uid)
-      );
-      if (bridgeResult) {
-        lastShownBridgeResult = bridgeResult.id;
-        const change = bridgeResult.elo_changes[currentUser.uid];
-        if (change) {
-          showToast(
-            `${change.won ? 'ПОБЕДА' : 'ПОРАЖЕНИЕ'} ${change.delta >= 0 ? '+' : ''}${change.delta} ELO → ${change.new_elo}`,
-            change.won ? 'success' : 'info'
-          );
+      // Check if our active match just finished
+      if (activeMatchId) {
+        const justFinished = allMatches.find(m => m.id === activeMatchId && m.status === 'finished');
+        if (justFinished && justFinished.winner !== 'cancelled' && lastShownResultMatchId !== justFinished.id) {
+          lastShownResultMatchId = justFinished.id;
+          showMatchResultModal(justFinished);
         }
       }
 
-      // Find any active (non-finished) match that includes currentUser
-      const myActiveMatch = allMatches
-        .filter(m => Array.isArray(m.realUids) && m.realUids.includes(currentUser.uid) && m.status !== 'finished')
+      const myActive = allMatches
+        .filter(m => Array.isArray(m.realSteamIds) && m.realSteamIds.includes(currentSteamId) && m.status !== 'finished')
         .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
 
-      if (myActiveMatch) {
-        activeMatchId = myActiveMatch.id;
-        activeMatchData = myActiveMatch;
+      if (myActive) {
+        activeMatchId = myActive.id;
+        activeMatchData = myActive;
 
-        // If we were searching, stop searching UI
         if (isSearching) {
           isSearching = false;
           clearInterval(queueInterval);
@@ -1393,21 +1199,19 @@
           document.getElementById('queue-searching-panel').classList.add('hidden');
         }
 
-        if (myActiveMatch.status === 'accept') {
-          showAcceptModal(myActiveMatch);
+        if (myActive.status === 'accept') {
+          showAcceptModal(myActive);
         } else {
           hideAcceptModal();
-          renderActiveMatch(myActiveMatch);
+          renderActiveMatch(myActive);
         }
 
-        // Trigger bot auto-ban if it's a bot captain's turn in veto
-        if (myActiveMatch.status === 'veto') {
-          maybeTriggerBotVeto(myActiveMatch);
+        if (myActive.status === 'veto') {
+          maybeTriggerBotVeto(myActive);
         }
       } else {
         hideAcceptModal();
         if (activeMatchId) {
-          // Match was finished or cancelled
           activeMatchId = null;
           activeMatchData = null;
           document.getElementById('active-match-container').classList.add('hidden');
@@ -1417,9 +1221,7 @@
     }
 
     function showAcceptModal(match) {
-      const modal = document.getElementById('match-accept-modal');
-      modal.classList.remove('hidden');
-
+      document.getElementById('match-accept-modal').classList.remove('hidden');
       if (playedAcceptSoundForMatch !== match.id) {
         playedAcceptSoundForMatch = match.id;
         playMatchFoundSound();
@@ -1429,33 +1231,23 @@
           acceptSecondsLeft = Math.max(0, acceptSecondsLeft - 1);
           document.getElementById('accept-countdown-text').textContent = acceptSecondsLeft;
           document.getElementById('accept-countdown-bar').style.width = `${(acceptSecondsLeft / 20) * 100}%`;
-          if (acceptSecondsLeft === 0) {
-            clearInterval(acceptTimerInterval);
-          }
+          if (acceptSecondsLeft === 0) clearInterval(acceptTimerInterval);
         }, 1000);
       }
 
-      const totalPlayers = match.teamA.length + match.teamB.length;
-      const botCount = [...match.teamA, ...match.teamB].filter(p => p.isBot).length;
-      const acceptedReal = (match.acceptedUids || []).length;
-      const readyCount = botCount + acceptedReal;
-
-      document.getElementById('accept-modal-subtitle').textContent =
-        `Режим ${match.mode === '5v5' ? '5 на 5' : '1 на 1'} • Подтверди участие`;
-      document.getElementById('accept-ready-count').textContent =
-        `Готово игроков: ${readyCount} / ${totalPlayers}`;
+      const total = match.team_ct.length + match.team_t.length;
+      const bots = [...match.team_ct, ...match.team_t].filter(p => p.isBot).length;
+      const ready = bots + (match.acceptedSteamIds || []).length;
+      document.getElementById('accept-modal-subtitle').textContent = `Режим ${match.mode === '5v5' ? '5 на 5' : '1 на 1'} • Подтверди участие`;
+      document.getElementById('accept-ready-count').textContent = `Готово: ${ready} / ${total}`;
 
       const btn = document.getElementById('btn-accept-match');
-      const alreadyAccepted = (match.acceptedUids || []).includes(currentUser.uid);
-      if (alreadyAccepted) {
-        btn.disabled = true;
-        btn.textContent = 'ОЖИДАНИЕ ДРУГИХ ИГРОКОВ...';
-        btn.className = 'w-full py-4 rounded-xl bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-display font-bold text-base uppercase tracking-wider cursor-default';
-      } else {
-        btn.disabled = false;
-        btn.textContent = 'ПРИНЯТЬ';
-        btn.className = 'w-full py-4 rounded-xl bg-faceit-orange hover:bg-faceit-orangeHover text-white font-display font-bold text-xl uppercase tracking-wider transition-all shadow-lg shadow-orange-600/30';
-      }
+      const accepted = (match.acceptedSteamIds || []).includes(currentSteamId);
+      btn.disabled = accepted;
+      btn.textContent = accepted ? 'ОЖИДАНИЕ ИГРОКОВ...' : 'ПРИНЯТЬ';
+      btn.className = accepted
+        ? 'w-full py-4 rounded-xl bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-display font-bold text-base uppercase tracking-wider'
+        : 'w-full py-4 rounded-xl bg-faceit-orange hover:bg-faceit-orangeHover text-white font-display font-bold text-xl uppercase tracking-wider transition-all shadow-lg shadow-orange-600/30';
     }
 
     function hideAcceptModal() {
@@ -1464,53 +1256,41 @@
     }
 
     async function acceptCurrentMatch() {
-      if (!activeMatchData || !currentUser || !db) return;
-      const accepted = new Set(activeMatchData.acceptedUids || []);
-      accepted.add(currentUser.uid);
-      const acceptedArr = Array.from(accepted);
-
-      const allRealAccepted = (activeMatchData.realUids || []).every(uid => accepted.has(uid));
-      const updates = { acceptedUids: acceptedArr };
-      if (allRealAccepted) {
-        updates.status = 'veto';
-      }
-
-      try {
-        await updateDoc(publicDoc('matches', activeMatchData.id), updates);
-      } catch (err) {
-        console.error('Accept match error:', err);
-      }
+      if (!activeMatchData || !db) return;
+      const set = new Set(activeMatchData.acceptedSteamIds || []);
+      set.add(currentSteamId);
+      const arr = Array.from(set);
+      const allReady = (activeMatchData.realSteamIds || []).every(id => set.has(id));
+      const upd = { acceptedSteamIds: arr };
+      if (allReady) upd.status = 'veto';
+      await db.collection('matches').doc(activeMatchData.id).update(upd);
     }
 
     function getCaptain(team) {
-      // First real player is captain; otherwise first bot
       return team.find(p => !p.isBot) || team[0];
     }
 
     function maybeTriggerBotVeto(match) {
-      const captain = match.vetoTurn === 'A' ? getCaptain(match.teamA) : getCaptain(match.teamB);
-      if (!captain || !captain.isBot) return;
-
-      // Only the first real player in realUids drives the bot's veto action so it doesn't double-fire
-      if (match.realUids[0] !== currentUser.uid) return;
+      const cap = match.vetoTurn === 'CT' ? getCaptain(match.team_ct) : getCaptain(match.team_t);
+      if (!cap || !cap.isBot) return;
+      if (match.realSteamIds[0] !== currentSteamId) return;
 
       clearTimeout(botVetoTimeout);
-      botVetoTimeout = setTimeout(async () => {
-        const remaining = match.maps.filter(m => !(match.bannedMaps || []).includes(m));
-        if (remaining.length <= 1) return;
-        const pickToBan = remaining[Math.floor(Math.random() * remaining.length)];
-        await banMap(pickToBan, true);
-      }, 1500);
+      botVetoTimeout = setTimeout(() => {
+        const rem = match.maps.filter(m => !(match.bannedMaps || []).includes(m));
+        if (rem.length > 1) {
+          banMap(rem[Math.floor(Math.random() * rem.length)], true);
+        }
+      }, 1300);
     }
 
     async function banMap(mapId, isBotAction = false) {
       if (!activeMatchData || activeMatchData.status !== 'veto' || !db) return;
       const match = activeMatchData;
-
       if (!isBotAction) {
-        const currentCaptain = match.vetoTurn === 'A' ? getCaptain(match.teamA) : getCaptain(match.teamB);
-        if (currentCaptain.uid !== currentUser.uid) {
-          showToast('Сейчас очередь капитана другой команды!', 'info');
+        const cap = match.vetoTurn === 'CT' ? getCaptain(match.team_ct) : getCaptain(match.team_t);
+        if (cap.steamid !== currentSteamId) {
+          showToast('Сейчас банит капитан другой команды!', 'info');
           return;
         }
       }
@@ -1518,37 +1298,24 @@
       const banned = [...(match.bannedMaps || [])];
       if (banned.includes(mapId)) return;
       banned.push(mapId);
-
       const remaining = match.maps.filter(m => !banned.includes(m));
-      const updates = {
+
+      const upd = {
         bannedMaps: banned,
-        vetoTurn: match.vetoTurn === 'A' ? 'B' : 'A'
+        vetoTurn: match.vetoTurn === 'CT' ? 'T' : 'CT'
       };
 
+      // When 1 map remains, set status: "ready" so bridge.py picks it up!
       if (remaining.length === 1) {
-        updates.selectedMap = remaining[0];
-        updates.status = 'live';
-
-        // Сигнал для Python-моста: пора запускать локальный CS2-сервер.
-        const botName = p => `Bot_Lvl${p.level || getLevelFromElo(p.elo || 1000)}_1`;
-        updates.bridgeStatus = 'ready';
-        updates.map = remaining[0];
-        updates.mode = match.mode;
-        updates.team_ct = match.teamA;
-        updates.team_t = match.teamB;
-        updates.bots_ct = (match.teamA || []).filter(p => p.isBot).map(botName);
-        updates.bots_t = (match.teamB || []).filter(p => p.isBot).map(botName);
+        upd.map = remaining[0];
+        upd.status = 'ready';
       }
 
-      try {
-        await updateDoc(publicDoc('matches', match.id), updates);
-      } catch (err) {
-        console.error('Ban map error:', err);
-      }
+      await db.collection('matches').doc(match.id).update(upd);
     }
 
     // =========================================================================
-    // 9. RENDER ACTIVE MATCH ROOM (VETO + LIVE SERVER + OPENCODE CONFIG)
+    // 9. RENDER ACTIVE MATCH ROOM
     // =========================================================================
     function renderActiveMatch(match) {
       document.getElementById('matchmaking-lobby').classList.add('hidden');
@@ -1556,31 +1323,29 @@
       container.classList.remove('hidden');
 
       const mapDefs = MAP_POOLS[match.mode] || MAP_POOLS['5v5'];
-      const capA = getCaptain(match.teamA);
-      const capB = getCaptain(match.teamB);
-      const avgEloA = Math.round(match.teamA.reduce((s, p) => s + p.elo, 0) / match.teamA.length);
-      const avgEloB = Math.round(match.teamB.reduce((s, p) => s + p.elo, 0) / match.teamB.length);
+      const capCT = getCaptain(match.team_ct);
+      const capT = getCaptain(match.team_t);
+      const avgCT = Math.round(match.team_ct.reduce((s, p) => s + p.elo, 0) / match.team_ct.length);
+      const avgT = Math.round(match.team_t.reduce((s, p) => s + p.elo, 0) / match.team_t.length);
 
       const isMyTurn = match.status === 'veto' && (
-        (match.vetoTurn === 'A' && capA.uid === currentUser.uid) ||
-        (match.vetoTurn === 'B' && capB.uid === currentUser.uid)
+        (match.vetoTurn === 'CT' && capCT.steamid === currentSteamId) ||
+        (match.vetoTurn === 'T' && capT.steamid === currentSteamId)
       );
 
-      // Build Roster HTML helper
-      const renderRoster = (team, label, avgElo, sideColor) => `
+      const renderRoster = (team, title, avg, colorClass, cap) => `
         <div class="bg-faceit-surface border border-faceit-border rounded-2xl p-5">
           <div class="flex items-center justify-between mb-4 pb-3 border-b border-faceit-border">
             <div>
-              <div class="text-xs uppercase tracking-wider font-bold ${sideColor}">${label}</div>
-              <div class="text-xs text-zinc-400 mt-0.5">Средний ELO: <span class="text-white font-mono font-semibold">${avgElo}</span></div>
+              <div class="text-xs uppercase tracking-wider font-bold ${colorClass}">${title}</div>
+              <div class="text-xs text-zinc-400 mt-0.5">Средний ELO: <span class="text-white font-mono font-semibold">${avg}</span></div>
             </div>
-            ${renderLevelBadge(getLevelFromElo(avgElo), 'md')}
+            ${renderLevelBadge(getLevelFromElo(avg), 'md')}
           </div>
           <div class="space-y-2.5">
             ${team.map(p => {
-              const isMe = p.uid === currentUser.uid;
-              const isCap = (team === match.teamA ? capA.uid : capB.uid) === p.uid;
-              const botInfo = p.isBot ? (p.botSkill || getBotSkillTier(p.level)) : null;
+              const isMe = p.steamid === currentSteamId;
+              const isCap = cap && cap.steamid === p.steamid;
               return `
                 <div class="flex items-center justify-between gap-3 p-3 rounded-xl ${isMe ? 'bg-faceit-orange/10 border border-faceit-orange/40' : 'bg-faceit-bg border border-faceit-border'}">
                   <div class="flex items-center gap-2.5 min-w-0">
@@ -1591,9 +1356,8 @@
                         ${isCap ? '<span class="px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-amber-500/20 text-amber-400">CAP</span>' : ''}
                         ${isMe ? '<span class="px-1.5 py-0.5 text-[9px] font-bold uppercase rounded bg-faceit-orange/20 text-faceit-orange">ВЫ</span>' : ''}
                       </div>
-                      <div class="text-[11px] font-mono text-zinc-400 flex items-center gap-2">
-                        <span>${p.elo} ELO</span>
-                        ${botInfo ? `<span class="text-zinc-500">• ${botInfo.label} (skill ${botInfo.skill})</span>` : `<span class="text-emerald-400/80">• Steam</span>`}
+                      <div class="text-[11px] font-mono text-zinc-400">
+                        ${p.elo} ELO • ${p.isBot ? `AI Bot (LVL ${p.level})` : 'Steam'}
                       </div>
                     </div>
                   </div>
@@ -1604,15 +1368,14 @@
         </div>
       `;
 
-      // Veto Section HTML
-      let centerSectionHtml = '';
+      let centerHtml = '';
       if (match.status === 'veto') {
-        const turnCap = match.vetoTurn === 'A' ? capA : capB;
-        centerSectionHtml = `
+        const turnCap = match.vetoTurn === 'CT' ? capCT : capT;
+        centerHtml = `
           <div class="bg-faceit-surface border border-faceit-orange/40 rounded-2xl p-6 space-y-5">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <div class="text-xs uppercase tracking-widest text-faceit-orange font-bold">Фаза голосования (Map Veto)</div>
+                <div class="text-xs uppercase tracking-widest text-faceit-orange font-bold">Голосование за карту (Map Veto)</div>
                 <h2 class="font-display text-2xl font-bold text-white mt-0.5">
                   ${isMyTurn ? 'ТВОЯ ОЧЕРЕДЬ БАНИТЬ КАРТУ' : `Банит капитан: ${escapeHtml(turnCap.nickname)}...`}
                 </h2>
@@ -1629,14 +1392,10 @@
                   <button onclick="banMap('${m.id}')" ${isBanned || !isMyTurn ? 'disabled' : ''}
                     class="relative h-32 rounded-xl overflow-hidden border-2 text-left p-4 flex flex-col justify-end transition-all map-${m.id}
                     ${isBanned ? 'border-red-500/40 opacity-45 grayscale cursor-not-allowed' : isMyTurn ? 'border-faceit-border hover:border-faceit-orange hover:scale-[1.02] cursor-pointer' : 'border-faceit-border cursor-wait'}">
-                    ${isBanned ? `
-                      <div class="absolute inset-0 bg-black/60 flex items-center justify-center">
-                        <span class="px-3 py-1 rounded bg-red-600/90 text-white font-display font-bold text-xs uppercase tracking-widest -rotate-6">ЗАБАНЕНО</span>
-                      </div>
-                    ` : ''}
+                    ${isBanned ? `<div class="absolute inset-0 bg-black/60 flex items-center justify-center"><span class="px-3 py-1 rounded bg-red-600/90 text-white font-display font-bold text-xs uppercase -rotate-6">ЗАБАНЕНО</span></div>` : ''}
                     <div class="relative z-10">
                       <div class="font-display text-xl font-bold text-white">${m.name}</div>
-                      <div class="text-xs font-mono text-zinc-300/80">${m.tag}</div>
+                      <div class="text-xs font-mono text-zinc-300/80">${m.id}</div>
                     </div>
                   </button>
                 `;
@@ -1644,87 +1403,72 @@
             </div>
           </div>
         `;
-      } else if (match.status === 'live') {
-        const chosenMapObj = mapDefs.find(m => m.id === match.selectedMap) || { id: match.selectedMap, name: match.selectedMap, tag: match.selectedMap };
-        const currentIp = match.serverIp || serverIp;
-        const connectCmd = `connect ${currentIp}`;
-        const { cfgText, jsonText } = generateServerConfig(match);
+      } else {
+        const isLive = match.status === 'live';
+        const ip = match.serverIp || serverIp;
+        const connectCmd = `connect ${ip}`;
+        const cfgCommands = [
+          `changelevel ${match.map}`,
+          `bot_kick`,
+          `bot_quota 0`,
+          `mp_autoteambalance 0`,
+          `mp_limitteams 0`,
+          ...(match.bots_ct || []).map(b => `bot_add_ct ${b}`),
+          ...(match.bots_t || []).map(b => `bot_add_t ${b}`),
+          `mp_restartgame 3`
+        ].join('\n');
 
-        centerSectionHtml = `
+        centerHtml = `
           <div class="bg-faceit-surface border border-faceit-border rounded-2xl overflow-hidden">
-            <!-- Chosen Map Banner -->
-            <div class="map-${chosenMapObj.id} p-6 sm:p-8 border-b border-faceit-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="map-${match.map || 'de_mirage'} p-6 sm:p-8 border-b border-faceit-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <div class="flex items-center gap-2 mb-2">
-                  <span class="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold uppercase tracking-wider">СЕРВЕР ГОТОВ</span>
-                  <span class="px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold uppercase tracking-wider">VAC: OFF (-insecure)</span>
+                <div class="flex items-center gap-2 mb-2 flex-wrap">
+                  ${isLive
+                    ? `<span class="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold uppercase">СЕРВЕР LIVE • МОЖНО ЗАХОДИТЬ</span>`
+                    : `<span class="px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold uppercase animate-pulse">ОЖИДАНИЕ BRIDGE.PY (status: ready)</span>`
+                  }
+                  <span class="px-2.5 py-0.5 rounded bg-black/40 text-zinc-300 border border-white/10 text-xs font-bold">NO-VAC</span>
                 </div>
-                <h2 class="font-display text-3xl sm:text-4xl font-bold text-white uppercase tracking-wide">${chosenMapObj.name}</h2>
-                <div class="text-xs font-mono text-zinc-300 mt-1">Карта: ${chosenMapObj.tag} • Режим: ${match.mode} • ID: ${match.id}</div>
+                <h2 class="font-display text-3xl sm:text-4xl font-bold text-white uppercase tracking-wide">${match.map}</h2>
+                <div class="text-xs font-mono text-zinc-300 mt-1">Режим: ${match.mode} • ID: ${match.id}</div>
               </div>
 
-              <!-- Direct Connect Actions -->
               <div class="flex flex-col gap-2.5 w-full sm:w-auto">
-                <a href="steam://connect/${encodeURIComponent(currentIp)}"
+                <a href="steam://connect/${encodeURIComponent(ip)}"
                   class="px-6 py-3.5 rounded-xl bg-faceit-orange hover:bg-faceit-orangeHover text-white font-display font-bold text-base uppercase tracking-wider text-center transition-all shadow-lg shadow-orange-600/30">
                   Подключиться в CS2
                 </a>
                 <button onclick="copyTextToClipboard('${connectCmd}')"
-                  class="px-4 py-2.5 rounded-xl bg-black/50 hover:bg-black/70 border border-white/15 text-zinc-100 font-mono text-xs flex items-center justify-between gap-3 transition-all">
+                  class="px-4 py-2.5 rounded-xl bg-black/50 hover:bg-black/70 border border-white/15 text-zinc-100 font-mono text-xs flex items-center justify-between gap-3">
                   <span>${connectCmd}</span>
                   <span class="text-faceit-orange font-sans font-bold">Копировать</span>
                 </button>
               </div>
             </div>
 
-            <!-- Editable Server IP + OpenCode Config Generator -->
-            <div class="p-6 space-y-5">
-              <div class="flex flex-col sm:flex-row sm:items-end gap-3">
-                <div class="flex-1">
-                  <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">IP:Port локального сервера</label>
-                  <input id="match-server-ip-input" type="text" value="${escapeHtml(currentIp)}"
-                    class="w-full px-4 py-2.5 rounded-xl bg-faceit-bg border border-faceit-border text-white font-mono text-sm focus:outline-none focus:border-faceit-orange" />
-                </div>
-                <button onclick="updateMatchServerIp()" class="px-5 py-2.5 rounded-xl bg-faceit-card hover:bg-zinc-700 border border-faceit-border text-white text-sm font-semibold transition-all">
-                  Обновить IP
+            <div class="p-6 space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <button onclick="toggleConfigPanel()" class="px-4 py-2 rounded-xl bg-faceit-card hover:bg-zinc-700 border border-faceit-border text-xs font-semibold text-zinc-200">
+                  ${configExpanded ? 'Скрыть RCON / CFG команды' : 'Показать RCON / CFG команды'}
                 </button>
-                <button onclick="toggleConfigPanel()" class="px-5 py-2.5 rounded-xl bg-faceit-card hover:bg-zinc-700 border border-faceit-orange/40 text-faceit-orange text-sm font-semibold transition-all">
-                  ${configExpanded ? 'Скрыть конфиг' : 'Конфиг для локального сервера / OpenCode'}
-                </button>
-              </div>
 
-              <!-- Expandable Config Panel -->
-              <div id="opencode-config-panel" class="${configExpanded ? '' : 'hidden'} bg-faceit-bg border border-faceit-border rounded-xl p-4 space-y-4">
-                <div>
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold uppercase tracking-wider text-faceit-orange">CS2 Server Console Commands (.cfg)</span>
-                    <button onclick="copyTextToClipboard(document.getElementById('match-cfg-code').textContent)" class="text-xs font-semibold text-zinc-300 hover:text-white underline">Копировать CFG</button>
-                  </div>
-                  <pre id="match-cfg-code" class="text-xs font-mono text-zinc-300 bg-black/40 p-3 rounded-lg overflow-x-auto whitespace-pre">${escapeHtml(cfgText)}</pre>
-                </div>
-
-                <div>
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold uppercase tracking-wider text-sky-400">OpenCode / Plugin Match Payload (JSON)</span>
-                    <button onclick="copyTextToClipboard(document.getElementById('match-json-code').textContent)" class="text-xs font-semibold text-zinc-300 hover:text-white underline">Копировать JSON</button>
-                  </div>
-                  <pre id="match-json-code" class="text-xs font-mono text-sky-200/90 bg-black/40 p-3 rounded-lg overflow-x-auto max-h-60">${escapeHtml(jsonText)}</pre>
+                <!-- Simulate Finish Buttons -->
+                <div class="flex flex-wrap items-center gap-2">
+                  <button onclick="simulateMatchFinish(true)" class="px-4 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all">
+                    Симулировать победу (+ELO)
+                  </button>
+                  <button onclick="simulateMatchFinish(false)" class="px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-300 text-xs font-bold transition-all">
+                    Симулировать поражение (-ELO)
+                  </button>
                 </div>
               </div>
 
-              <!-- Finish Match (ELO Test) -->
-              <div class="pt-4 border-t border-faceit-border flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="text-xs text-zinc-400">
-                  Завершить матч и начислить/списать ELO в Firebase (для локального теста или ручного закрытия):
+              <div id="cfg-panel" class="${configExpanded ? '' : 'hidden'} bg-faceit-bg border border-faceit-border rounded-xl p-4">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-bold uppercase text-faceit-orange">Консольные команды CS2</span>
+                  <button onclick="copyTextToClipboard(document.getElementById('cfg-code-block').textContent)" class="text-xs text-zinc-300 hover:text-white underline">Копировать</button>
                 </div>
-                <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-                  <button onclick="finishMatch('A')" class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all">
-                    Победа Team A (Тест ELO)
-                  </button>
-                  <button onclick="finishMatch('B')" class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-300 text-xs font-bold transition-all">
-                    Победа Team B (Тест ELO)
-                  </button>
-                </div>
+                <pre id="cfg-code-block" class="text-xs font-mono text-zinc-300 overflow-x-auto">${escapeHtml(cfgCommands)}</pre>
               </div>
             </div>
           </div>
@@ -1732,82 +1476,21 @@
       }
 
       container.innerHTML = `
-        <!-- Top Match Status Bar -->
         <div class="flex items-center justify-between flex-wrap gap-3">
           <div class="flex items-center gap-3">
             <span class="px-3 py-1 rounded-lg bg-faceit-orange/15 text-faceit-orange font-display font-bold text-sm uppercase">${match.mode}</span>
             <h1 class="font-display text-xl font-bold text-white">КОМНАТА МАТЧА</h1>
           </div>
-          <button onclick="cancelActiveMatch()" class="px-3.5 py-2 rounded-xl bg-faceit-card hover:bg-zinc-700 border border-faceit-border text-zinc-400 hover:text-white text-xs font-semibold transition-all">
+          <button onclick="cancelActiveMatch()" class="px-3.5 py-2 rounded-xl bg-faceit-card hover:bg-zinc-700 border border-faceit-border text-zinc-400 hover:text-white text-xs font-semibold">
             Выйти из комнаты
           </button>
         </div>
-
-        ${centerSectionHtml}
-
-        <!-- Teams Grid -->
+        ${centerHtml}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          ${renderRoster(match.teamA, 'TEAM A (CT)', avgEloA, 'text-sky-400')}
-          ${renderRoster(match.teamB, 'TEAM B (T)', avgEloB, 'text-amber-400')}
+          ${renderRoster(match.team_ct, 'TEAM CT', avgCT, 'text-sky-400', capCT)}
+          ${renderRoster(match.team_t, 'TEAM T', avgT, 'text-amber-400', capT)}
         </div>
       `;
-    }
-
-    function generateServerConfig(match) {
-      const allBots = [...match.teamA, ...match.teamB].filter(p => p.isBot);
-      const avgBotLvl = allBots.length
-        ? Math.round(allBots.reduce((s, b) => s + b.level, 0) / allBots.length)
-        : 5;
-      const avgTier = getBotSkillTier(avgBotLvl);
-      const maxRounds = match.mode === '1v1' ? 16 : 24;
-      const totalQuota = match.mode === '1v1' ? 2 : 10;
-
-      const cfgLines = [
-        `// FACEIT LOCAL — Match ${match.id} (${match.mode})`,
-        `// Launch server with: -dedicated -insecure (VAC OFF)`,
-        `changelevel ${match.selectedMap || 'de_mirage'}`,
-        `mp_maxrounds ${maxRounds}`,
-        `mp_freezetime ${match.mode === '1v1' ? 5 : 15}`,
-        `mp_autoteambalance 0`,
-        `mp_limitteams 0`,
-        `bot_quota ${totalQuota}`,
-        `bot_quota_mode fill`,
-        `bot_difficulty ${avgTier.cs2Difficulty}`,
-        `sv_cheats 0`,
-        `mp_restartgame 1`
-      ];
-
-      const jsonPayload = {
-        matchId: match.id,
-        mode: match.mode,
-        map: match.selectedMap,
-        vacEnabled: false,
-        launchFlags: ['-dedicated', '-insecure'],
-        serverIp: match.serverIp || serverIp,
-        teams: {
-          CT: match.teamA.map(p => ({
-            name: p.nickname,
-            steamId64: p.steamId64,
-            isBot: p.isBot,
-            elo: p.elo,
-            faceitLevel: p.level,
-            botConfig: p.isBot ? (p.botSkill || getBotSkillTier(p.level)) : null
-          })),
-          T: match.teamB.map(p => ({
-            name: p.nickname,
-            steamId64: p.steamId64,
-            isBot: p.isBot,
-            elo: p.elo,
-            faceitLevel: p.level,
-            botConfig: p.isBot ? (p.botSkill || getBotSkillTier(p.level)) : null
-          }))
-        }
-      };
-
-      return {
-        cfgText: cfgLines.join('\n'),
-        jsonText: JSON.stringify(jsonPayload, null, 2)
-      };
     }
 
     function toggleConfigPanel() {
@@ -1815,129 +1498,139 @@
       if (activeMatchData) renderActiveMatch(activeMatchData);
     }
 
-    async function updateMatchServerIp() {
-      const input = document.getElementById('match-server-ip-input');
-      if (!input || !activeMatchData || !db) return;
-      const newIp = input.value.trim() || '127.0.0.1:27015';
-      serverIp = newIp;
-      document.getElementById('setting-server-ip').value = newIp;
-      try {
-        await updateDoc(publicDoc('matches', activeMatchData.id), { serverIp: newIp });
-        showToast(`IP сервера обновлён: ${newIp}`, 'success');
-      } catch (err) {
-        console.error(err);
+    async function simulateMatchFinish(userWins) {
+      if (!activeMatchData || !db) return;
+      const match = activeMatchData;
+      const inCT = match.team_ct.some(p => p.steamid === currentSteamId);
+      const winnerSide = (inCT && userWins) || (!inCT && !userWins) ? 'CT' : 'T';
+      const score = winnerSide === 'CT' ? '13:8' : '8:13';
+
+      const avgCT = match.team_ct.reduce((s, p) => s + p.elo, 0) / Math.max(1, match.team_ct.length);
+      const avgT = match.team_t.reduce((s, p) => s + p.elo, 0) / Math.max(1, match.team_t.length);
+
+      const eloChanges = {};
+      for (const [side, players, myAvg, enAvg] of [
+        ['CT', match.team_ct, avgCT, avgT],
+        ['T', match.team_t, avgT, avgCT]
+      ]) {
+        const won = side === winnerSide;
+        const delta = calculateEloDelta(myAvg, enAvg, won);
+        for (const p of players) {
+          if (p.isBot) continue;
+          const ref = db.collection('users').doc(String(p.steamid));
+          const snap = await ref.get();
+          const oldElo = snap.exists ? (Number(snap.data().elo) || 1000) : 1000;
+          const newElo = Math.max(100, oldElo + delta);
+          const newLvl = getLevelFromElo(newElo);
+
+          await ref.set({
+            elo: newElo,
+            level: newLvl,
+            wins: firebase.firestore.FieldValue.increment(won ? 1 : 0),
+            losses: firebase.firestore.FieldValue.increment(won ? 0 : 1),
+            updatedAt: Date.now()
+          }, { merge: true });
+
+          eloChanges[String(p.steamid)] = { delta, new_elo: newElo, won };
+        }
       }
+
+      await db.collection('matches').doc(match.id).update({
+        status: 'finished',
+        winner: winnerSide,
+        score,
+        elo_changes: eloChanges,
+        finishedAt: Date.now()
+      });
     }
 
-    async function finishMatch(winningTeam) {
-      if (!activeMatchData || !currentUser || !db) return;
-      const match = activeMatchData;
+    function showMatchResultModal(match) {
+      const myChange = match.elo_changes && match.elo_changes[currentSteamId];
+      const inCT = match.team_ct.some(p => p.steamid === currentSteamId);
+      const won = myChange ? myChange.won : ((inCT && match.winner === 'CT') || (!inCT && match.winner === 'T'));
+      const delta = myChange ? myChange.delta : (won ? 25 : -25);
+      const newElo = myChange ? myChange.new_elo : (currentProfile ? currentProfile.elo : 1000);
 
-      // Если матч запущен мостом, ELO считает bridge.py по данным GSI — не дублируем.
-      if (match.bridgeStatus === 'ready') {
-        showToast('Результат записывается Python-мостом после завершения игры в CS2', 'info');
-        return;
-      }
+      const pill = document.getElementById('result-status-pill');
+      pill.textContent = won ? 'ПОБЕДА' : 'ПОРАЖЕНИЕ';
+      pill.className = won
+        ? 'inline-block px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+        : 'inline-block px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-red-500/20 text-red-400 border border-red-500/40';
 
-      // Calculate ELO delta (classic FACEIT ~25 ELO scaled by team avg diff)
-      const avgA = match.teamA.reduce((s, p) => s + p.elo, 0) / match.teamA.length;
-      const avgB = match.teamB.reduce((s, p) => s + p.elo, 0) / match.teamB.length;
-      const expectedA = 1 / (1 + Math.pow(10, (avgB - avgA) / 400));
-      const actualA = winningTeam === 'A' ? 1 : 0;
-      const deltaA = Math.round(50 * (actualA - expectedA)) || (winningTeam === 'A' ? 25 : -25);
-      const deltaB = -deltaA;
+      document.getElementById('result-score-text').textContent = match.score || (won ? '13 : 9' : '9 : 13');
+      document.getElementById('result-map-text').textContent = `${match.map || 'de_mirage'} • ${match.mode}`;
 
-      try {
-        // Update match doc
-        await updateDoc(publicDoc('matches', match.id), {
-          status: 'finished',
-          winner: winningTeam,
-          eloDelta: { A: deltaA, B: deltaB },
-          finishedAt: Date.now()
-        });
+      const deltaEl = document.getElementById('result-elo-delta');
+      deltaEl.textContent = `${delta >= 0 ? '+' : ''}${delta} ELO`;
+      deltaEl.className = `font-display text-5xl font-bold animate-elo-pop ${delta >= 0 ? 'text-emerald-400' : 'text-red-500'}`;
 
-        // Update current user's profile ELO & stats
-        const inTeamA = match.teamA.some(p => p.uid === currentUser.uid);
-        const myDelta = inTeamA ? deltaA : deltaB;
-        const iWon = (inTeamA && winningTeam === 'A') || (!inTeamA && winningTeam === 'B');
+      document.getElementById('result-new-badge').innerHTML = renderLevelBadge(getLevelFromElo(newElo), 'md');
+      document.getElementById('result-new-elo').textContent = `Текущий рейтинг: ${newElo} ELO`;
 
-        const newElo = Math.max(100, (Number(currentProfile.elo) || 1000) + myDelta);
-        const newLevel = getLevelFromElo(newElo);
+      document.getElementById('match-result-modal').classList.remove('hidden');
+    }
 
-        await updateDoc(publicDoc('profiles', currentUser.uid), {
-          elo: newElo,
-          level: newLevel,
-          wins: (Number(currentProfile.wins) || 0) + (iWon ? 1 : 0),
-          losses: (Number(currentProfile.losses) || 0) + (iWon ? 0 : 1),
-          updatedAt: Date.now()
-        });
-
-        showToast(
-          iWon ? `Победа! +${Math.abs(myDelta)} ELO (Текущий: ${newElo})` : `Поражение! -${Math.abs(myDelta)} ELO (Текущий: ${newElo})`,
-          iWon ? 'success' : 'info'
-        );
-      } catch (err) {
-        console.error('Finish match error:', err);
-        showToast('Ошибка при завершении матча', 'error');
-      }
+    function closeResultModal() {
+      document.getElementById('match-result-modal').classList.add('hidden');
     }
 
     async function cancelActiveMatch() {
       if (!activeMatchData || !db) return;
-      try {
-        await updateDoc(publicDoc('matches', activeMatchData.id), {
-          status: 'finished',
-          winner: 'cancelled',
-          finishedAt: Date.now()
-        });
-        showToast('Матч отменён', 'info');
-      } catch (err) {
-        console.error(err);
-      }
+      await db.collection('matches').doc(activeMatchData.id).update({
+        status: 'finished',
+        winner: 'cancelled',
+        finishedAt: Date.now()
+      });
+      showToast('Матч отменён', 'info');
     }
 
     // =========================================================================
-    // 10. LEADERBOARD & PROFILE RENDERING
+    // 10. LEADERBOARD, PROFILE & ELO SCALE RENDERING
     // =========================================================================
+    function renderEloScaleLegend() {
+      const grid = document.getElementById('elo-scale-grid');
+      grid.innerHTML = ELO_BRACKETS.map(b => `
+        <div class="bg-faceit-bg border border-faceit-border rounded-xl p-2.5 flex items-center gap-2.5">
+          ${renderLevelBadge(b.level, 'sm')}
+          <div>
+            <div class="font-bold text-zinc-200">LVL ${b.level}</div>
+            <div class="text-[11px] font-mono text-zinc-500">${b.level === 10 ? '2001+' : `${b.min}–${b.max}`}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
     function renderLeaderboard() {
       const tbody = document.getElementById('leaderboard-tbody');
-      const countEl = document.getElementById('leaderboard-count');
-
-      // Sort in JS memory (RULE 2: no orderBy in Firestore)
-      const sorted = [...allProfiles].sort((a, b) => (Number(b.elo) || 0) - (Number(a.elo) || 0));
-      countEl.textContent = sorted.length;
+      const sorted = [...allUsers].sort((a, b) => (Number(b.elo) || 0) - (Number(a.elo) || 0));
+      document.getElementById('leaderboard-count').textContent = sorted.length;
 
       if (sorted.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-zinc-500">Пока нет зарегистрированных игроков</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-zinc-500">Пока нет игроков в базе</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = sorted.map((p, idx) => {
-        const wins = Number(p.wins) || 0;
-        const losses = Number(p.losses) || 0;
-        const total = wins + losses;
-        const wr = total > 0 ? Math.round((wins / total) * 100) : 0;
-        const lvl = getLevelFromElo(p.elo);
-        const isMe = currentUser && p.id === currentUser.uid;
-
+      tbody.innerHTML = sorted.map((u, i) => {
+        const w = Number(u.wins) || 0;
+        const l = Number(u.losses) || 0;
+        const wr = (w + l) > 0 ? Math.round((w / (w + l)) * 100) : 0;
+        const isMe = String(u.steamid) === String(currentSteamId);
         return `
           <tr class="${isMe ? 'bg-faceit-orange/10' : 'hover:bg-faceit-card/60'} transition-colors">
-            <td class="py-3.5 px-4 font-display font-bold ${idx < 3 ? 'text-faceit-orange text-base' : 'text-zinc-400'}">#${idx + 1}</td>
+            <td class="py-3.5 px-4 font-display font-bold ${i < 3 ? 'text-faceit-orange text-base' : 'text-zinc-400'}">#${i + 1}</td>
             <td class="py-3.5 px-4">
               <div class="flex items-center gap-2.5">
-                ${renderLevelBadge(lvl, 'md')}
-                <span class="font-semibold text-white">${escapeHtml(p.nickname)}</span>
+                ${renderLevelBadge(getLevelFromElo(u.elo), 'md')}
+                <span class="font-semibold text-white">${escapeHtml(u.nickname || 'Player')}</span>
                 ${isMe ? '<span class="px-1.5 py-0.5 rounded bg-faceit-orange/20 text-faceit-orange text-[10px] font-bold">ВЫ</span>' : ''}
               </div>
             </td>
-            <td class="py-3.5 px-4 font-mono text-xs text-zinc-400 hidden sm:table-cell">${escapeHtml(p.steamId64 || '---')}</td>
+            <td class="py-3.5 px-4 font-mono text-xs text-zinc-400 hidden sm:table-cell">${escapeHtml(u.steamid)}</td>
             <td class="py-3.5 px-4 text-center text-xs">
-              <span class="text-emerald-400 font-semibold">${wins}</span>
-              <span class="text-zinc-600 mx-1">/</span>
-              <span class="text-red-400 font-semibold">${losses}</span>
+              <span class="text-emerald-400 font-semibold">${w}</span> / <span class="text-red-400 font-semibold">${l}</span>
             </td>
             <td class="py-3.5 px-4 text-center font-mono text-xs text-zinc-300">${wr}%</td>
-            <td class="py-3.5 px-4 text-right font-display font-bold text-base text-white">${p.elo}</td>
+            <td class="py-3.5 px-4 text-right font-display font-bold text-base text-white">${u.elo || 1000}</td>
           </tr>
         `;
       }).join('');
@@ -1947,23 +1640,21 @@
       if (!currentProfile) return;
       const elo = Number(currentProfile.elo) || 1000;
       const lvl = getLevelFromElo(elo);
-      const wins = Number(currentProfile.wins) || 0;
-      const losses = Number(currentProfile.losses) || 0;
-      const total = wins + losses;
-      const wr = total > 0 ? Math.round((wins / total) * 100) : 0;
+      const w = Number(currentProfile.wins) || 0;
+      const l = Number(currentProfile.losses) || 0;
+      const wr = (w + l) > 0 ? Math.round((w / (w + l)) * 100) : 0;
 
       document.getElementById('profile-big-badge').innerHTML = renderLevelBadge(lvl, 'lg');
       document.getElementById('profile-nickname').textContent = currentProfile.nickname;
       document.getElementById('profile-level-tag').textContent = `УРОВЕНЬ ${lvl}`;
-      document.getElementById('profile-steamid').textContent = currentProfile.steamId64 || '---';
+      document.getElementById('profile-steamid').textContent = currentProfile.steamid;
       document.getElementById('profile-elo-val').textContent = elo;
-      document.getElementById('profile-wins-val').textContent = wins;
+      document.getElementById('profile-wins-val').textContent = w;
       document.getElementById('profile-wr-val').textContent = `${wr}%`;
 
-      // Progress bar to next level
       const bracket = ELO_BRACKETS.find(b => b.level === lvl) || ELO_BRACKETS[9];
       if (lvl === 10) {
-        document.getElementById('elo-progress-label').textContent = 'Максимальный уровень (FACEIT Level 10)';
+        document.getElementById('elo-progress-label').textContent = 'Максимальный уровень (FACEIT 10 LVL)';
         document.getElementById('elo-progress-numbers').textContent = `${elo} ELO`;
         document.getElementById('elo-progress-bar').style.width = '100%';
       } else {
@@ -1974,34 +1665,33 @@
         document.getElementById('elo-progress-bar').style.width = `${pct}%`;
       }
 
-      // Render Match History
-      const historyEl = document.getElementById('profile-match-history');
-      const myHistory = allMatches
-        .filter(m => m.status === 'finished' && m.winner !== 'cancelled' && Array.isArray(m.realUids) && m.realUids.includes(currentUser?.uid))
+      const history = allMatches
+        .filter(m => m.status === 'finished' && m.winner !== 'cancelled' && Array.isArray(m.realSteamIds) && m.realSteamIds.includes(currentSteamId))
         .sort((a, b) => (b.finishedAt || b.createdAt || 0) - (a.finishedAt || a.createdAt || 0));
 
-      if (myHistory.length === 0) {
-        historyEl.innerHTML = `<div class="text-sm text-zinc-500 py-6 text-center bg-faceit-bg rounded-xl border border-faceit-border">История матчей пока пуста. Сыграй свой первый матч!</div>`;
+      const histEl = document.getElementById('profile-match-history');
+      if (history.length === 0) {
+        histEl.innerHTML = `<div class="text-sm text-zinc-500 py-6 text-center bg-faceit-bg rounded-xl border border-faceit-border">История матчей пока пуста</div>`;
         return;
       }
 
-      historyEl.innerHTML = myHistory.map(m => {
-        const inA = m.teamA.some(p => p.uid === currentUser.uid);
-        const won = (inA && m.winner === 'A') || (!inA && m.winner === 'B');
-        const delta = m.eloDelta ? (inA ? m.eloDelta.A : m.eloDelta.B) : (won ? 25 : -25);
-        const dateStr = new Date(m.finishedAt || m.createdAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-
+      histEl.innerHTML = history.map(m => {
+        const ch = m.elo_changes && m.elo_changes[currentSteamId];
+        const inCT = m.team_ct.some(p => p.steamid === currentSteamId);
+        const won = ch ? ch.won : ((inCT && m.winner === 'CT') || (!inCT && m.winner === 'T'));
+        const delta = ch ? ch.delta : (won ? 25 : -25);
+        const dt = new Date(m.finishedAt || m.createdAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
         return `
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-faceit-bg border border-faceit-border">
+          <div class="flex items-center justify-between gap-3 p-4 rounded-xl bg-faceit-bg border border-faceit-border">
             <div class="flex items-center gap-3">
               <div class="w-1.5 h-10 rounded-full ${won ? 'bg-emerald-400' : 'bg-red-500'}"></div>
               <div>
                 <div class="flex items-center gap-2">
-                  <span class="font-display font-bold text-sm uppercase ${won ? 'text-emerald-400' : 'text-red-400'}">${won ? 'ПОБЕДА' : 'ПОРАЖЕНИЕ'}</span>
+                  <span class="font-display font-bold text-sm ${won ? 'text-emerald-400' : 'text-red-400'}">${won ? 'ПОБЕДА' : 'ПОРАЖЕНИЕ'}</span>
                   <span class="px-2 py-0.5 rounded bg-faceit-card text-[11px] font-bold text-zinc-300">${m.mode}</span>
-                  <span class="text-xs font-mono text-zinc-400">${m.selectedMap || 'de_mirage'}</span>
+                  <span class="text-xs font-mono text-zinc-400">${m.map || 'de_mirage'} ${m.score ? `(${m.score})` : ''}</span>
                 </div>
-                <div class="text-[11px] text-zinc-500 mt-0.5">${dateStr}</div>
+                <div class="text-[11px] text-zinc-500 mt-0.5">${dt}</div>
               </div>
             </div>
             <div class="font-display font-bold text-base ${delta >= 0 ? 'text-emerald-400' : 'text-red-400'}">
@@ -2015,48 +1705,42 @@
     // =========================================================================
     // 11. SETTINGS
     // =========================================================================
-    async function saveSettings() {
-      const ipVal = document.getElementById('setting-server-ip').value.trim() || '127.0.0.1:27015';
-      const openIdVal = document.getElementById('setting-openid-url').value.trim();
-      serverIp = ipVal;
-      steamOpenIdReturnUrl = openIdVal;
-
-      if (currentUser && db && currentProfile) {
-        try {
-          await updateDoc(publicDoc('profiles', currentUser.uid), {
-            serverIp,
-            steamOpenIdReturnUrl
-          });
-        } catch (err) {
-          console.error(err);
-        }
-      }
+    function saveServerSettings() {
+      serverIp = document.getElementById('setting-server-ip').value.trim() || '127.0.0.1:27015';
+      steamOpenIdReturnUrl = document.getElementById('setting-openid-url').value.trim();
+      localStorage.setItem('faceit_server_ip', serverIp);
+      localStorage.setItem('faceit_openid_url', steamOpenIdReturnUrl);
       showToast('Настройки сервера сохранены!', 'success');
     }
 
-    // =========================================================================
-    // 12. EXPOSE HANDLERS TO WINDOW & START APP
-    // =========================================================================
-    window.switchTab = switchTab;
-    window.selectMode = selectMode;
-    window.loginWithSteamOpenID = loginWithSteamOpenID;
-    window.generateRandomSteamId = generateRandomSteamId;
-    window.handleQuickSteamLogin = handleQuickSteamLogin;
-    window.logoutSteamProfile = logoutSteamProfile;
-    window.startQueue = startQueue;
-    window.cancelQueue = cancelQueue;
-    window.forceStartWithBots = forceStartWithBots;
-    window.acceptCurrentMatch = acceptCurrentMatch;
-    window.banMap = banMap;
-    window.toggleConfigPanel = toggleConfigPanel;
-    window.updateMatchServerIp = updateMatchServerIp;
-    window.finishMatch = finishMatch;
-    window.cancelActiveMatch = cancelActiveMatch;
-    window.saveSettings = saveSettings;
-    window.copyTextToClipboard = copyTextToClipboard;
+    function applyCustomFirebaseConfig() {
+      try {
+        const raw = document.getElementById('setting-fb-config').value.trim();
+        const parsed = JSON.parse(raw);
+        if (!parsed.apiKey || !parsed.projectId) throw new Error('Нужны apiKey и projectId');
+        localStorage.setItem('faceit_fb_config', JSON.stringify(parsed));
+        initFirebase(parsed);
+        showToast('Конфиг Firebase обновлён!', 'success');
+      } catch (e) {
+        showToast('Неверный JSON: ' + e.message, 'error');
+      }
+    }
 
+    function resetDefaultFirebaseConfig() {
+      localStorage.removeItem('faceit_fb_config');
+      initFirebase(DEFAULT_FIREBASE_CONFIG);
+      showToast('Восстановлен встроенный конфиг faciet-feed5', 'info');
+    }
+
+    // =========================================================================
+    // 12. BOOTSTRAP
+    // =========================================================================
     window.addEventListener('DOMContentLoaded', () => {
-      initFirebase();
+      document.getElementById('setting-server-ip').value = serverIp;
+      document.getElementById('setting-openid-url').value = steamOpenIdReturnUrl;
+      renderEloScaleLegend();
+      updateAuthUI();
+      initFirebase(getActiveFirebaseConfig());
     });
   </script>
 </body>
