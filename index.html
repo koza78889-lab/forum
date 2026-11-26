@@ -707,6 +707,7 @@
     let acceptSecondsLeft = 20;
     let botVetoTimeout = null;
     let playedAcceptSoundForMatch = null;
+    let lastShownBridgeResult = null;
     let configExpanded = false;
 
     let serverIp = '127.0.0.1:27015';
@@ -1359,6 +1360,22 @@
     function handleMatchesUpdates() {
       if (!currentUser) return;
 
+      // ELO-результат, записанный Python-мостом после GSI gameover
+      const bridgeResult = allMatches.find(m =>
+        m.status === 'finished' && m.elo_changes && m.id !== lastShownBridgeResult &&
+        Array.isArray(m.realUids) && m.realUids.includes(currentUser.uid)
+      );
+      if (bridgeResult) {
+        lastShownBridgeResult = bridgeResult.id;
+        const change = bridgeResult.elo_changes[currentUser.uid];
+        if (change) {
+          showToast(
+            `${change.won ? 'ПОБЕДА' : 'ПОРАЖЕНИЕ'} ${change.delta >= 0 ? '+' : ''}${change.delta} ELO → ${change.new_elo}`,
+            change.won ? 'success' : 'info'
+          );
+        }
+      }
+
       // Find any active (non-finished) match that includes currentUser
       const myActiveMatch = allMatches
         .filter(m => Array.isArray(m.realUids) && m.realUids.includes(currentUser.uid) && m.status !== 'finished')
@@ -1511,6 +1528,16 @@
       if (remaining.length === 1) {
         updates.selectedMap = remaining[0];
         updates.status = 'live';
+
+        // Сигнал для Python-моста: пора запускать локальный CS2-сервер.
+        const botName = p => `Bot_Lvl${p.level || getLevelFromElo(p.elo || 1000)}_1`;
+        updates.bridgeStatus = 'ready';
+        updates.map = remaining[0];
+        updates.mode = match.mode;
+        updates.team_ct = match.teamA;
+        updates.team_t = match.teamB;
+        updates.bots_ct = (match.teamA || []).filter(p => p.isBot).map(botName);
+        updates.bots_t = (match.teamB || []).filter(p => p.isBot).map(botName);
       }
 
       try {
@@ -1805,6 +1832,12 @@
     async function finishMatch(winningTeam) {
       if (!activeMatchData || !currentUser || !db) return;
       const match = activeMatchData;
+
+      // Если матч запущен мостом, ELO считает bridge.py по данным GSI — не дублируем.
+      if (match.bridgeStatus === 'ready') {
+        showToast('Результат записывается Python-мостом после завершения игры в CS2', 'info');
+        return;
+      }
 
       // Calculate ELO delta (classic FACEIT ~25 ELO scaled by team avg diff)
       const avgA = match.teamA.reduce((s, p) => s + p.elo, 0) / match.teamA.length;
