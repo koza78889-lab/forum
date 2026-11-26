@@ -552,7 +552,7 @@
                     <span class="text-xs font-extrabold uppercase tracking-wider text-gray-300">Подключение через консоль CS2 (~)</span>
                     <button onclick="openConfigModalForCurrentMatch()" class="px-3 py-1.5 rounded-lg bg-faceit-card hover:bg-faceit-hover border border-faceit-orange/50 text-faceit-orange text-xs font-extrabold uppercase tracking-wide transition flex items-center gap-1.5 cursor-pointer">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
-                      Конфиг сервера (MatchZy JSON)
+                      Состав матча
                     </button>
                   </div>
                   <div class="flex flex-col sm:flex-row gap-2">
@@ -687,7 +687,7 @@
               <ul class="space-y-1.5 text-gray-400">
                 <li>• <strong class="text-white">Metamod:Source 2.x</strong> — распакуй в <code class="text-gray-300">game/csgo/addons/</code> и пропиши в <code class="text-gray-300">gameinfo.gi</code>.</li>
                 <li>• <strong class="text-white">CounterStrikeSharp</strong> — движок C#-плагинов для CS2 (with-runtime).</li>
-                <li>• <strong class="text-white">MatchZy</strong> — главный плагин для 5v5 и 1v1 (ножевой раунд, <code class="text-gray-300">!ready</code>, <code class="text-gray-300">!pause</code>, загрузка JSON).</li>
+                <li>• <strong class="text-white">MatchZy</strong> — главный плагин для 5v5 и 1v1 (ножевой раунд, <code class="text-gray-300">!ready</code>, <code class="text-gray-300">!pause</code>, загрузка матча).</li>
                 <li>• <strong class="text-white">CS2-Advertisement</strong> — автосообщения со ссылкой на сайт в чат.</li>
               </ul>
             </div>
@@ -867,7 +867,7 @@
     <div class="animate-modal bg-faceit-surface border border-faceit-border rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
       <div class="px-6 py-4 bg-faceit-card border-b border-faceit-border flex items-center justify-between">
         <div>
-          <h3 class="text-base font-black uppercase tracking-wider text-white">Конфиг локального сервера CS2</h3>
+          <h3 class="text-base font-black uppercase tracking-wider text-white">Состав матча и подключение</h3>
           <p id="cfg-modal-subtitle" class="text-xs text-gray-400 mt-0.5">Порт 27015 • Режим 5v5 • MatchZy</p>
         </div>
         <button onclick="closeConfigModal()" class="p-2 rounded-lg bg-faceit-bg hover:bg-faceit-hover text-gray-400 hover:text-white transition cursor-pointer">✕</button>
@@ -877,12 +877,12 @@
         <!-- Блок 1: MatchZy JSON -->
         <div class="space-y-2">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-extrabold uppercase tracking-wider text-faceit-orange">1. Файл матча MatchZy (match_config.json)</span>
+            <span class="text-xs font-extrabold uppercase tracking-wider text-faceit-orange">1. Состав матча</span>
             <button onclick="copyTextarea('cfg-json-area', 'MatchZy JSON скопирован!')" class="px-3 py-1.5 rounded-lg bg-faceit-orange hover:bg-faceit-orangeHover text-white text-[11px] font-extrabold uppercase tracking-wider transition cursor-pointer">
               Скопировать JSON
             </button>
           </div>
-          <p class="text-[11px] text-gray-400">Бэкенд пишет этот JSON в <code class="text-gray-200">game/csgo/cfg/MatchZy/matches/match_&lt;ID&gt;.json</code> и грузит командой <code class="text-emerald-400">matchzy_loadmatch cfg/MatchZy/matches/match_&lt;ID&gt;.json</code> — вручную копировать не нужно.</p>
+          <p class="text-[11px] text-gray-400">Состав, уровни и карта берутся из карточки матча. Сервер и загрузка матча выполняются бэкендом автоматически.</p>
           <textarea id="cfg-json-area" readonly rows="10" class="w-full bg-faceit-bg border border-faceit-border rounded-xl p-3 text-xs font-mono text-emerald-300 focus:outline-none resize-none"></textarea>
         </div>
 
@@ -1134,7 +1134,7 @@
       { id: 'seed_chopper', nickname: 'chopper_igl', elo: 1180, wins: 28, losses: 26, isSeed: true }
     ];
 
-    const BOT_NICKNAMES = [
+    const PLAYER_NICKNAMES = [
       'magixx_vibe', 'zont1x_anchor', 'fl1t_entry', 'Jame_time', 'fame_clutch',
       'electronic_rr', 'Perfecto_sit', 'Boombl4_cap', 'nafany_rush', 'ax1le_spray',
       'degster_scope', 'r3salt_peek', 'kyousuke_aim', 'zweih_tap', 'n0rb3r7_b'
@@ -1326,7 +1326,7 @@
       return port;
     }
 
-    function createServerInstance({ matchId, mode, weaponMode, region, mapName, mapCode, team1Name, team2Name }) {
+    function createServerInstance({ matchId, mode, weaponMode, region, mapName, mapCode, team1Name, team2Name, roster1, roster2 }) {
       const port = allocateFreePort();
       const instance = {
         id: 'srv_' + Date.now() + '_' + port,
@@ -1343,6 +1343,8 @@
         rconPassword: 'rcon_' + Math.random().toString(36).slice(2, 8),
         team1Name: team1Name || 'Team 1',
         team2Name: team2Name || 'Team 2',
+        roster1: roster1 || [],
+        roster2: roster2 || [],
         status: 'Запуск Docker/CS2...',
         createdAt: Date.now()
       };
@@ -1492,58 +1494,20 @@
       const srv = localServerInstances.find(s => s.id === serverId);
       if (!srv) return;
 
-      const is1v1 = srv.mode === '1v1';
-      const teamSize = is1v1 ? 1 : 5;
-      const steamId = localStorage.getItem('faceit_steam_id') || currentProfile?.uid || '';
-      const fakeRoster = (start, count, prefix) => {
-        const players = {};
-        for (let i = 0; i < count; i++) {
-          players[`76561199${String(start + i).padStart(9, '0')}`] = `${prefix}${i + 1}`;
-        }
-        return players;
+      const rosterView = (list) => (list || []).map(p => ({
+        nickname: p.nickname || p.name,
+        elo: p.elo,
+        level: getLevelInfo(p.elo).lvl
+      }));
+      const matchSummary = {
+        matchId: srv.matchId,
+        mode: srv.mode.toUpperCase(),
+        map: srv.mapCode,
+        port: srv.port,
+        password: srv.password,
+        team1: { name: srv.team1Name, players: rosterView(srv.roster1) },
+        team2: { name: srv.team2Name, players: rosterView(srv.roster2) }
       };
-
-      // Та же форма конфига, которую бэкенд реально грузит через matchzy_loadmatch.
-      const matchZyJson = {
-        matchid: Number(String(Date.now()).slice(-9)),
-        num_maps: 1,
-        maplist: [srv.mapCode],
-        skip_veto: true,
-        map_sides: ['team1_ct'],
-        players_per_team: teamSize,
-        min_players_to_ready: 1,
-        team1: {
-          name: srv.team1Name,
-          players: {
-            ...(/^7656119\d{10}$/.test(steamId) ? { [steamId]: currentProfile?.nickname || 'Player' } : {}),
-            ...fakeRoster(1, /^7656119\d{10}$/.test(steamId) ? teamSize - 1 : teamSize, 'Mate')
-          }
-        },
-        team2: {
-          name: srv.team2Name,
-          players: fakeRoster(11, teamSize, 'Bot'),
-          bots: true,
-          bot_difficulty: 3
-        },
-        cvars: {
-          mp_friendlyfire: '0',
-          mp_solid_teammates: '1',
-          mp_free_armor: is1v1 ? '2' : '0',
-          mp_maxrounds: is1v1 ? '16' : '24',
-          mp_overtime_enable: is1v1 ? '0' : '1',
-          mp_warmuptime: '10',
-          bot_quota: is1v1 ? '2' : '10',
-          bot_quota_mode: 'fill',
-          bot_difficulty: '3',
-          bot_controllable: '0',
-          bot_defer_to_human_goals: '0',
-          matchzy_ready_mode: '1',
-          matchzy_join_start_delay: '2',
-          sv_password: srv.password,
-          hostname: `FACEIT LOCAL ${srv.mode.toUpperCase()} #${srv.matchId} - Port ${srv.port}`
-        }
-      };
-      if (is1v1) matchZyJson.game_mode = '1v1';
 
       const batScript = `@echo off
 title CS2 FACEIT LOCAL [${srv.mode.toUpperCase()}] - Port ${srv.port}
@@ -1551,7 +1515,7 @@ start "" "D:\\Steam\\steamapps\\common\\Counter-Strike Global Offensive\\game\\b
 pause`;
 
       document.getElementById('cfg-modal-subtitle').textContent = `Порт ${srv.port} • Режим ${srv.mode.toUpperCase()} • Карта ${srv.mapCode}`;
-      document.getElementById('cfg-json-area').value = JSON.stringify(matchZyJson, null, 2);
+      document.getElementById('cfg-json-area').value = JSON.stringify(matchSummary, null, 2);
       document.getElementById('cfg-bat-area').value = batScript;
       document.getElementById('server-config-modal').classList.remove('hidden');
     };
@@ -2127,16 +2091,16 @@ pause`;
       const neededOthers = is1v1 ? 1 : 9;
 
       const usedNicks = new Set([currentProfile.nickname]);
-      const shuffledBots = [...BOT_NICKNAMES].sort(() => Math.random() - 0.5);
+      const shuffledPlayers = [...PLAYER_NICKNAMES].sort(() => Math.random() - 0.5);
       const pool = [];
 
-      for (const botNick of shuffledBots) {
+      for (const playerNick of shuffledPlayers) {
         if (pool.length >= neededOthers) break;
-        if (!usedNicks.has(botNick)) {
-          usedNicks.add(botNick);
+        if (!usedNicks.has(playerNick)) {
+          usedNicks.add(playerNick);
           const variance = Math.floor((Math.random() - 0.5) * 320);
           pool.push({
-            nickname: botNick,
+            nickname: playerNick,
             elo: Math.max(450, userElo + variance),
             isUser: false
           });
@@ -2166,9 +2130,11 @@ pause`;
         weaponMode: selectedDuelWeapon,
         region: 'Выбор вето...',
         mapName: 'Выбор вето...',
-        mapCode: is1v1 ? 'aim_map' : 'de_mirage',
+        mapCode: is1v1 ? MAPS_1V1[0].code : MAPS_5V5[0].code,
         team1Name: is1v1 ? currentProfile.nickname : `Team_${currentProfile.nickname}`,
-        team2Name: is1v1 ? team2[0].nickname : `Team_${team2[0].nickname}`
+        team2Name: is1v1 ? team2[0].nickname : `Team_${team2[0].nickname}`,
+        roster1: team1,
+        roster2: team2
       });
 
       currentMatch = {
@@ -2506,7 +2472,10 @@ pause`;
         team1Name: is1v1 ? (currentProfile?.nickname || 'Player') : `Team_${currentProfile?.nickname || 'Player'}`,
         team2Name: is1v1 ? (currentMatch.team2[0]?.nickname || 'Opponent') : `Team_${currentMatch.team2[0]?.nickname || 'Team 2'}`,
         playerSteamId: steamId,
-        playerName: currentProfile?.nickname || 'Player'
+        playerName: currentProfile?.nickname || 'Player',
+        playerElo: currentProfile?.elo || 1000,
+        roster1: currentMatch.team1.map(p => ({ name: p.nickname, elo: p.elo, isUser: !!p.isUser })),
+        roster2: currentMatch.team2.map(p => ({ name: p.nickname, elo: p.elo }))
       };
 
       try {
